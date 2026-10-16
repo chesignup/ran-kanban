@@ -1,38 +1,44 @@
 <!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#b91c1c"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#f6f5f3"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="apple-touch-icon" href="icon.png">
 <title>המשימות של רן</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="preconnect" href="https://fonts.gstatic.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;800&display=swap"><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/sortablejs@1.15.2/Sortable.min.js"></script>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:#f2f2f7;color:#111}
-header{background:#b91c1c;color:#fff;padding:calc(env(safe-area-inset-top) + 10px) 16px 8px;display:flex;align-items:center;gap:10px}
-header h1{flex:1;font-size:22px;margin:0;font-weight:700}
-.ib{border:0;background:rgba(255,255,255,.18);color:#fff;width:40px;height:40px;border-radius:50%;font-size:19px}
-#tabs{display:flex;background:#b91c1c;padding:0 8px 8px}#tabs button{flex:1;border:0;background:none;color:#fecaca;font-size:15px;padding:6px;border-radius:16px}#tabs button.on{background:#fff;color:#b91c1c;font-weight:700}
-#pages{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;height:calc(100% - 150px)}#pages::-webkit-scrollbar{display:none}
-.page{flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;overflow-y:auto;padding:12px 12px 90px}
-.list{min-height:60vh;list-style:none;margin:0;padding:0}
-.it{background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.08);display:flex;gap:10px;align-items:center;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-.it .tx{flex:1;min-width:0}.it b{display:block;font-size:16px}.it small{display:block;color:#666;font-size:13px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.it a{color:#b91c1c;text-decoration:none}.dots3{border:0;background:none;font-size:20px;color:#999;padding:4px 6px}
-.unc b{color:#b45309}.ghost{opacity:.3}.chosen{box-shadow:0 10px 25px rgba(0,0,0,.25);transform:scale(1.03)}
-.empty{color:#aaa;text-align:center;margin-top:40px}
-#dots{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 18px);right:0;left:0;text-align:center;pointer-events:none}
-#dots i{pointer-events:auto;display:inline-block;width:8px;height:8px;border-radius:50%;background:#bbb;margin:0 5px;transition:.2s}#dots i.on{background:#b91c1c;transform:scale(1.4)}
-#fab{position:fixed;left:18px;bottom:calc(env(safe-area-inset-bottom) + 50px);width:58px;height:58px;border-radius:50%;border:0;background:#b91c1c;color:#fff;font-size:30px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
-#edgeL,#edgeR{position:fixed;top:150px;bottom:0;width:26px;background:linear-gradient(90deg,rgba(185,28,28,.25),transparent);display:none;z-index:5}#edgeL{left:0}#edgeR{right:0;transform:scaleX(-1)}
-.sheet{border:0;border-radius:18px 18px 0 0;width:100%;max-width:100%;margin:auto 0 0;padding:16px 16px calc(env(safe-area-inset-bottom) + 16px)}.sheet::backdrop{background:rgba(0,0,0,.35)}
-.sheet h3{margin:0 0 10px}.sheet input{width:100%;padding:12px;font-size:16px;border:1px solid #ddd;border-radius:10px;margin-bottom:10px}
-.sheet .btn{display:block;width:100%;padding:13px;font-size:16px;border:0;border-radius:12px;margin-top:8px;background:#f2f2f7}.btn.p{background:#b91c1c;color:#fff}.btn.d{color:#dc2626}
-#mapv{position:fixed;inset:0;background:#fff;z-index:20;display:none;flex-direction:column}#map{flex:1}#mapv .bar{padding:calc(env(safe-area-inset-top) + 8px) 10px 8px;display:flex;gap:6px}#mapv input{flex:1;padding:10px;border:1px solid #ddd;border-radius:10px}
-#rl{max-height:30vh;overflow:auto;padding:0 12px}.rv{border:1px solid #eee;border-radius:12px;padding:8px;margin-bottom:8px}
+:root{--bg:#f6f5f3;--card:#fff;--ink:#141414;--mute:#8a8a8e;--acc:#b3261e;--r:20px}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;font-family:"Rubik","Assistant",system-ui,-apple-system,Roboto,Arial;background:var(--bg);color:var(--ink)}
+header{padding:calc(env(safe-area-inset-top) + 18px) 24px 4px;display:flex;align-items:center;gap:8px}
+header h1{flex:1;font-size:34px;margin:0;font-weight:800;letter-spacing:-.5px;transition:opacity .2s}
+.ib{border:0;background:#fff;color:var(--ink);width:44px;height:44px;border-radius:50%;font-size:18px;box-shadow:0 1px 2px rgba(0,0,0,.06),0 4px 14px rgba(0,0,0,.05)}
+#tabs{display:flex;gap:6px;padding:10px 20px 6px;overflow-x:auto;scrollbar-width:none}#tabs button{border:0;background:none;color:var(--mute);font-size:15px;padding:7px 14px;border-radius:999px;transition:.25s;font-family:inherit}#tabs button.on{background:var(--ink);color:#fff}
+#tabs button span{opacity:.6;margin-inline-start:4px;font-size:13px}
+#pages{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;height:calc(100% - 140px - env(safe-area-inset-top))}#pages::-webkit-scrollbar{display:none}
+.page{flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;overflow-y:auto;padding:10px 18px 120px}
+.list{min-height:65vh;list-style:none;margin:0;padding:0}
+.it{background:var(--card);border-radius:var(--r);padding:18px 20px;margin-bottom:12px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 6px 20px rgba(0,0,0,.04);display:flex;gap:10px;align-items:center;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:pan-y;will-change:transform;animation:in .35s cubic-bezier(.2,.8,.2,1)}
+@keyframes in{from{opacity:0;transform:translateY(8px)}}
+.it .tx{flex:1;min-width:0}.it b{display:block;font-size:18px;font-weight:600;line-height:1.3}.it small{display:block;color:var(--mute);font-size:14px;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it a{color:var(--acc);text-decoration:none;font-weight:500}.dots3{border:0;background:none;font-size:20px;color:#c4c4c8;padding:6px}
+.unc b::after{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#e8a33d;margin-inline-start:8px;vertical-align:middle}
+.ghost{opacity:.25}.chosen{box-shadow:0 18px 40px rgba(0,0,0,.18)!important;transform:scale(1.03)}
+.empty{color:#b8b8bc;text-align:center;margin-top:30vh;font-size:16px}
+#dots{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 22px);right:0;left:0;text-align:center;pointer-events:none}
+#dots i{pointer-events:auto;display:inline-block;width:6px;height:6px;border-radius:3px;background:#cfcfd3;margin:0 4px;transition:.3s cubic-bezier(.2,.8,.2,1)}#dots i.on{background:var(--ink);width:20px}
+#fab{position:fixed;left:22px;bottom:calc(env(safe-area-inset-bottom) + 52px);width:60px;height:60px;border-radius:50%;border:0;background:var(--acc);color:#fff;font-size:30px;font-weight:300;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:transform .2s}#fab:active{transform:scale(.92)}
+#edgeL,#edgeR{display:none!important}
+.hint{position:absolute;top:50%;transform:translateY(-50%);font-size:13px;color:var(--mute);opacity:0}
+.sheet{border:0;border-radius:28px 28px 0 0;width:100%;max-width:100%;margin:auto 0 0;padding:22px 20px calc(env(safe-area-inset-bottom) + 18px);animation:up .3s cubic-bezier(.2,.8,.2,1)}@keyframes up{from{transform:translateY(100%)}}.sheet::backdrop{background:rgba(0,0,0,.3);backdrop-filter:blur(2px)}
+.sheet h3{margin:0 0 14px;font-size:22px}.sheet input{width:100%;padding:15px;font-size:17px;border:0;background:#f2f2f4;border-radius:14px;margin-bottom:10px;font-family:inherit}
+.sheet .btn{display:block;width:100%;padding:15px;font-size:17px;border:0;border-radius:14px;margin-top:8px;background:#f2f2f4;font-family:inherit;color:var(--ink)}.btn.p{background:var(--ink);color:#fff}.btn.d{color:var(--acc)}
+#mapv{position:fixed;inset:0;background:#fff;z-index:20;display:none;flex-direction:column}#map{flex:1}#mapv .bar{padding:calc(env(safe-area-inset-top) + 10px) 12px 10px;display:flex;gap:6px}#mapv input{flex:1;padding:12px;border:0;background:#f2f2f4;border-radius:12px}
+#rl{max-height:30vh;overflow:auto;padding:0 14px}.rv{background:#fafafa;border-radius:16px;padding:10px;margin-bottom:10px}
+#inst{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom) + 120px);background:var(--ink);color:#fff;border-radius:18px;padding:14px 16px;display:none;align-items:center;gap:10px;z-index:15;box-shadow:0 12px 30px rgba(0,0,0,.3);animation:up .4s}#inst b{flex:1;font-weight:500;font-size:15px}#inst button{border:0;border-radius:10px;padding:8px 12px;font-family:inherit}
 </style></head><body>
-<header><h1>המשימות של רן</h1><button class="ib" onclick="fi.click()" title="צלם דף">📷</button><button class="ib" onclick="openMap()" title="מפה">🗺</button></header>
+<header><h1 id="ttl">עבודה</h1><button class="ib" onclick="fi.click()" title="צלם דף">📷</button><button class="ib" onclick="openMap()" title="מפה">🗺</button></header>
 <div id="tabs"></div>
 <div id="pages" onscroll="dt()"></div>
-<div id="dots"></div><div id="edgeL"></div><div id="edgeR"></div>
+<div id="dots"></div><div id="inst"><b id="instT">התקן את האפליקציה למסך הבית</b><button id="instB">התקן</button><button onclick="instDone()">✕</button></div><div id="edgeL"></div><div id="edgeR"></div>
 <button id="fab" onclick="edit()">+</button>
 <input id="fi" type="file" accept="image/*" capture="environment" hidden onchange="ocr(this.files[0])">
 <dialog id="dlg" class="sheet"><form method="dialog" id="f"><h3 id="dt">פריט</h3><input name="name" placeholder="שם" required><input name="address" placeholder="כתובת (רחוב, עיר)"><input name="phone" placeholder="טלפון" type="tel" inputmode="tel"><button class="btn p" value="ok">שמור</button><button class="btn" value="x" formnovalidate>ביטול</button></form></dialog>
@@ -52,7 +58,7 @@ document.querySelectorAll('.list').forEach(el=>Sortable.create(el,{group:'items'
  onStart:()=>{dragging=true;edgeL.style.display=edgeR.style.display='block'},onEnd:()=>{dragging=false;edgeL.style.display=edgeR.style.display='none';syncDom()}}));dt()}
 function syncDom(){const o=[];document.querySelectorAll('.list').forEach(l=>l.querySelectorAll('.it').forEach(li=>{const t=byId(li.dataset.id);t.page=l.dataset.p;o.push(t)}));I=o;save();setTimeout(draw,0)}
 function dt(){curPage=Math.round(Math.abs(pages.scrollLeft)/pages.clientWidth);const c=k=>I.filter(t=>t.page==k).length;
-dots.innerHTML=P.map((p,j)=>`<i class="${j==curPage?'on':''}" onclick="go(${j})"></i>`).join('');tabs.innerHTML=P.map(([k,n],j)=>`<button class="${j==curPage?'on':''}" onclick="go(${j})">${n} ${c(k)}</button>`).join('');fab.style.display=curPage==3?'none':''}
+dots.innerHTML=P.map((p,j)=>`<i class="${j==curPage?'on':''}" onclick="go(${j})"></i>`).join('');tabs.innerHTML=P.map(([k,n],j)=>`<button class="${j==curPage?'on':''}" onclick="go(${j})">${n}<span>${c(k)}</span></button>`).join('');fab.style.display=curPage==3?'none':'';ttl.textContent=P[curPage][1]}
 function go(j,inst){pages.children[j]&&pages.children[j].scrollIntoView({behavior:inst?'auto':'smooth',inline:'center',block:'nearest'})}
 // side-drag: hold item near screen edge -> flip page (RTL: right edge = previous page)
 let edgeT=null;document.addEventListener('touchmove',e=>edgeCheck(e.touches[0].clientX),{passive:true});document.addEventListener('pointermove',e=>dragging&&edgeCheck(e.clientX));
@@ -78,5 +84,23 @@ async function route(){rl.textContent='מחשב...';await openMap();const s=awai
 let left=I.filter(t=>t.page!='trash'&&t.ll),o=[],p=s;while(left.length){left.sort((a,b)=>dist(p,a.ll)-dist(p,b.ll));const n=left.shift();o.push(n);p=n.ll}
 const g='https://www.google.com/maps/dir/'+[s,...o.map(t=>t.ll)].map(x=>x.join(',')).join('/');
 rl.innerHTML=`<ol>${o.map(t=>`<li>${esc(t.name)} <a href="https://waze.com/ul?ll=${t.ll.join(',')}&navigate=yes">Waze</a></li>`).join('')}</ol><a class="btn p" style="text-align:center;text-decoration:none" href="${g}" target="_blank">פתח מסלול ב-Google Maps</a>`;L.polyline([s,...o.map(t=>t.ll)],{color:'#b91c1c'}).addTo(lay)}
+
+// swipe-to-move: horizontal drag on a card -> adjacent page (RTL: finger left = next page)
+(function(){let el,x0,y0,dx=0,mode=null,t0;
+document.addEventListener('touchstart',e=>{const it=e.target.closest('.it');if(!it||e.target.closest('a,button'))return;el=it;x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=0;mode=null;t0=Date.now()},{passive:true});
+document.addEventListener('touchmove',e=>{if(!el||dragging)return;const t=e.touches[0],mx=t.clientX-x0,my=t.clientY-y0;
+ if(!mode){if(Math.abs(mx)>10&&Math.abs(mx)>Math.abs(my)*1.3)mode='h';else if(Math.abs(my)>10)mode='v';else return}
+ if(mode!='h')return;e.preventDefault();dx=mx;const pg=curPage+(dx<0?1:-1),ok=pg>=0&&pg<P.length,d=ok?dx:dx/4;
+ el.style.transition='none';el.style.transform=`translateX(${d}px) rotate(${d/60}deg)`;el.style.opacity=1-Math.min(Math.abs(d)/innerWidth,.6)},{passive:false});
+document.addEventListener('touchend',()=>{if(!el)return;const it=el;el=null;if(mode!='h')return;const pg=curPage+(dx<0?1:-1),ok=pg>=0&&pg<P.length,v=Math.abs(dx)/Math.max(1,Date.now()-t0);
+ if(ok&&(Math.abs(dx)>innerWidth*.3||v>.6&&Math.abs(dx)>50)){it.style.transition='transform .28s cubic-bezier(.2,.8,.2,1),opacity .28s';it.style.transform=`translateX(${Math.sign(dx)*innerWidth*1.1}px)`;it.style.opacity=0;
+  setTimeout(()=>{const t=byId(it.dataset.id);if(P[pg][0]=='trash')t.prev=t.page;t.page=P[pg][0];I=I.filter(x=>x!==t);I.unshift(t);save();draw();toast('הועבר ל'+P[pg][1])},260)}
+ else{it.style.transition='transform .5s cubic-bezier(.34,1.56,.64,1),opacity .3s';it.style.transform='';it.style.opacity=''}});})();
+function toast(s){let d=document.getElementById('tst');if(!d){d=document.createElement('div');d.id='tst';d.style.cssText='position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:#141414;color:#fff;padding:10px 18px;border-radius:999px;font-size:15px;z-index:30;transition:opacity .3s';document.body.appendChild(d)}d.textContent=s;d.style.opacity=1;clearTimeout(d._t);d._t=setTimeout(()=>d.style.opacity=0,1600)}
+// one-time install prompt
+let dp;const standalone=matchMedia('(display-mode: fullscreen),(display-mode: standalone)').matches||navigator.standalone;
+function instDone(){inst.style.display='none';localStorage.instShown=1}
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;if(!localStorage.instShown&&!standalone){inst.style.display='flex';instB.onclick=async()=>{dp.prompt();instDone()}}});
+if(/iphone|ipad/i.test(navigator.userAgent)&&!standalone&&!localStorage.instShown){instT.textContent='לחץ שיתוף ⬆ ואז "הוסף למסך הבית"';instB.style.display='none';inst.style.display='flex'}
 draw();go(2,1);if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
 </script></body></html>

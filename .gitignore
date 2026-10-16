@@ -1,2 +1,5 @@
 node_modules
 package*.json
+*.png
+!icon.png
+!icon192.png

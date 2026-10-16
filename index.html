@@ -52,6 +52,9 @@ dialog{border:0;padding:0;background:transparent;max-width:100%;max-height:100%}
 .tm{width:100%;font:600 28px Rubik!important;text-align:center;letter-spacing:1px}
 .it .ind i.cal{background:#fbefee;color:var(--acc);font-weight:500}
 .btn.wa{background:#e8f8ee;color:#128c4a;display:flex;align-items:center;justify-content:center;gap:8px}.btn.wa svg{width:20px;height:20px;fill:#25d366}
+.shd{display:flex;align-items:center;gap:10px;margin-bottom:16px}.shd h3{flex:1;margin:0!important}#sic{display:flex;gap:6px}
+.ic{width:40px;height:40px;border-radius:50%;border:0;background:var(--soft);display:grid;place-items:center;transition:.2s var(--ease)}.ic:active{transform:scale(.9)}.ic:focus{outline:none}.ic svg{width:20px;height:20px;fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.ic.wa{background:#e8f8ee}.ic.wa svg{fill:#25d366;stroke:none}.ic.del{background:#fbefee}.ic.del svg{stroke:var(--acc)}
 </style></head><body>
 <header><h1><span class="sub">המשימות של רן</span><span id="ttl">עבודה</span></h1>
 <button class="ib" id="undoB" onclick="undo()" disabled title="בטל"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button></header>
@@ -59,7 +62,7 @@ dialog{border:0;padding:0;background:transparent;max-width:100%;max-height:100%}
 <button id="fab" onclick="edit()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
 <div id="toast"><span id="tmsg"></span><button onclick="undo()">בטל</button></div>
 <div id="inst"><b id="instT">התקן למסך הבית למסך מלא</b><button id="instB">התקן</button><button onclick="instDone()">✕</button></div>
-<dialog id="dlg" class="sheet"><div><form id="f" onsubmit="saveEdit(event)"><h3 id="dtt">פריט</h3>
+<dialog id="dlg" class="sheet"><div><form id="f" onsubmit="saveEdit(event)"><div class="shd"><h3 id="dtt">פריט</h3><div id="sic"><button type="button" class="ic wa" id="iWA" title="שתף בוואטסאפ" onclick="shareWA(editId)"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.4 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 1.9 1.1 1 2 1.3 2.3 1.4.3.1.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg></button><button type="button" class="ic" id="iCal" title="הוסף ליומן" onclick="askCal(editId)"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></button><button type="button" class="ic" id="iRes" title="שחזר" onclick="restore()"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button type="button" class="ic del" id="iDel" title="מחק לצמיתות" onclick="delForever()"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></div></div>
 <label class="fld">שם</label><input name="name" required>
 <label class="fld">טלפון</label><input name="phone" type="tel" inputmode="tel">
 <label class="fld">מיקום</label><input name="address" placeholder="רחוב, עיר">
@@ -69,7 +72,6 @@ dialog{border:0;padding:0;background:transparent;max-width:100%;max-height:100%}
 <div class="row"><button type="button" class="chip" onclick="cap.click()">📷 צלם</button><button type="button" class="chip" onclick="upl.click()">📎 צרף קובץ</button></div>
 <input id="cap" type="file" accept="image/*" capture="environment" hidden onchange="addAtt(this)"><input id="upl" type="file" multiple hidden onchange="addAtt(this)">
 <button class="btn p">שמור</button><button type="button" class="btn" onclick="dlg.close()">ביטול</button></form></div></dialog>
-<dialog id="menu" class="sheet"><div><h3 id="mt"></h3><div id="mb"></div><button class="btn" onclick="menu.close()">ביטול</button></div></dialog>
 <dialog id="cal" class="sheet"><div><div class="calhd"><div class="calic"><i id="cm">OCT</i><b id="cd">16</b></div><div><h3>להוסיף ליומן?</h3><p id="cn"></p></div></div>
 <label class="fld">יום</label><div class="dchips" id="dch"></div><label class="fld">שעה</label><input type="time" id="ctime" class="tm" value="09:00">
 <button class="btn p" onclick="calSave()">הוסף</button><button class="btn" onclick="cal.close()">לא עכשיו</button></div></dialog>
@@ -93,8 +95,8 @@ function card(t){const a=t.att||[],img=a.filter(x=>/^image/.test(x.type)).length
 return `<li class="it${/\?/.test(t.name+t.address)?' unc':''}" data-id="${t.id}"><b>${esc(t.name)}</b><div class="meta">${t.address||t.ll?`<span>${esc(t.address||'מיקום נוכחי')}</span>`:''}${t.phone?`<a href="tel:${esc(t.phone)}" onclick="event.stopPropagation()">${esc(t.phone)}</a>`:''}</div>${t.notes||img||fl||t.ll||t.when?`<div class="ind">${t.when?`<i class="cal">📅 ${fmtD(t.when.slice(0,10))} · ${t.when.slice(11)}</i>`:''}${t.notes?'<i>📝 הערה</i>':''}${img?`<i>📷 ${img}</i>`:''}${fl?`<i>📎 ${fl}</i>`:''}${t.ll?'<i>📍</i>':''}</div>`:''}</li>`}
 function draw(){const s=pages.scrollLeft;pages.innerHTML=P.map(([k])=>{const l=I.filter(t=>t.page==k);return `<section class="page"><ul class="list" data-p="${k}">${l.map(card).join('')}</ul>${l.length?'':`<div class="empty">${k=='trash'?'הזבל ריק':'אין כאן כלום עדיין'}</div>`}</section>`}).join('');pages.scrollLeft=s;
 document.querySelectorAll('.list').forEach(el=>Sortable.create(el,{group:'items',animation:250,easing:'cubic-bezier(.2,.8,.2,1)',delay:380,delayOnTouchOnly:true,touchStartThreshold:8,ghostClass:'ghost',chosenClass:'chosen',forceFallback:true,fallbackTolerance:4,
- onStart:()=>{dragging=true;H.push(JSON.stringify(I));navigator.vibrate&&navigator.vibrate(15)},onEnd:e=>{dragging=false;clearTimeout(edgeT);edgeT=null;if(e.from===e.to&&e.oldIndex===e.newIndex){H.pop();return}syncDom(e.from!==e.to?'הועבר ל'+pn(e.to.dataset.p):'הסדר עודכן');if(e.from!==e.to&&/work|ran/.test(e.to.dataset.p)){const id=e.item.dataset.id;setTimeout(()=>askCal(id),400)}}}));
-document.querySelectorAll('.it').forEach(li=>li.onclick=()=>{if(!dragging)openMenu(li.dataset.id)});dt()}
+ onStart:()=>{dragging=true;H.push(JSON.stringify(I));navigator.vibrate&&navigator.vibrate(15)},onEnd:e=>{dragging=false;clearTimeout(edgeT);edgeT=null;if(e.from===e.to&&e.oldIndex===e.newIndex){H.pop();return}syncDom(e.from===e.to?'הסדר עודכן':e.to.dataset.p=='trash'?'נמחק (בזבל)':e.from.dataset.p=='trash'?'שוחזר ל'+pn(e.to.dataset.p):'הועבר ל'+pn(e.to.dataset.p));if(e.from!==e.to&&/work|ran/.test(e.to.dataset.p)){const id=e.item.dataset.id;setTimeout(()=>askCal(id),400)}}}));
+document.querySelectorAll('.it').forEach(li=>li.onclick=()=>{if(!dragging)edit(li.dataset.id)});dt()}
 function syncDom(msg){const o=[];document.querySelectorAll('.list').forEach(l=>l.querySelectorAll('.it').forEach(li=>{const t=byId(li.dataset.id);if(l.dataset.p=='trash'&&t.page!='trash')t.prev=t.page;t.page=l.dataset.p;o.push(t)}));I=o;save();setTimeout(draw,0);toast(msg)}
 function dt(){const n=Math.round(Math.abs(pages.scrollLeft)/pages.clientWidth);if(!isNaN(n))curPage=n;const c=k=>I.filter(t=>t.page==k).length;
 dots.innerHTML=P.map((p,j)=>`<i class="${j==curPage?'on':''}"></i>`).join('');tabs.innerHTML=P.map(([k,n],j)=>`<button class="${j==curPage?'on':''}" onclick="go(${j})">${n}<span>${c(k)}</span></button>`).join('');fab.style.display=curPage==3?'none':'';ttl.textContent=P[curPage][1];undoB.disabled=!H.length}
@@ -104,14 +106,10 @@ let edgeT=null;const edgeCheck=x=>{if(!dragging)return;const d=x>innerWidth-44?-
 document.addEventListener('touchmove',e=>edgeCheck(e.touches[0].clientX),{passive:true});document.addEventListener('pointermove',e=>edgeCheck(e.clientX));
 // close dialogs on backdrop tap
 document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d)d.close()}));
-function openMenu(id){const t=byId(id);mt.textContent=t.name;let h='';
-if(t.page=='trash')h=`<button class="btn p" onclick="mvTo('${id}','${t.prev||'work'}')">שחזר ל${pn(t.prev||'work')}</button><button class="btn d" onclick="if(confirm('למחוק לצמיתות?')){menu.close();act('נמחק לצמיתות',()=>I=I.filter(x=>x.id!='${id}'))}">מחק לצמיתות</button>`;
-else h=`<button class="btn p" onclick="menu.close();edit('${id}')">פתח / ערוך</button><button class="btn wa" onclick="menu.close();shareWA('${id}')"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.4 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 1.9 1.1 1 2 1.3 2.3 1.4.3.1.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>שתף בוואטסאפ</button><button class="btn" onclick="menu.close();askCal('${id}')">📅 ${t.when?'שנה מועד ביומן':'הוסף ליומן'}</button>`+P.filter(p=>p[0]!='trash'&&p[0]!=t.page).map(([k,n])=>`<button class="btn" onclick="mvTo('${id}','${k}')">העבר ל${n}</button>`).join('')+`<button class="btn d" onclick="mvTo('${id}','trash')">העבר לזבל</button>`;
-mb.innerHTML=h;menu.showModal()}
-function mvTo(id,k){menu.close();act(k=='trash'?'הועבר לזבל':'הועבר ל'+pn(k),()=>{const t=byId(id);if(k=='trash')t.prev=t.page;t.page=k;I=I.filter(x=>x!==t);k=='trash'?I.unshift(t):I.push(t)});if(k=='work'||k=='ran')setTimeout(()=>askCal(id),350)}
+function mvTo(id,k){act(k=='trash'?'הועבר לזבל':'הועבר ל'+pn(k),()=>{const t=byId(id);if(k=='trash')t.prev=t.page;t.page=k;I=I.filter(x=>x!==t);k=='trash'?I.unshift(t):I.push(t)});if(k=='work'||k=='ran')setTimeout(()=>askCal(id),350)}
 // ---- edit sheet
 let draftAtt=[],draftLL=null;
-function edit(id){editId=id;const t=id?byId(id):{};dtt.textContent=id?'עריכה':'חדש ב'+P[Math.min(curPage,2)][1];for(const e of f.elements)if(e.name)e.value=t[e.name]||'';draftAtt=[...(t.att||[])];draftLL=t.ll||null;links();renderAtts();dlg.showModal()}
+function edit(id){editId=id;const t=id?byId(id):{};const tr=t.page=='trash';dtt.textContent=id?(tr?'בזבל':pn(t.page)):'חדש ב'+P[Math.min(curPage,2)][1];iWA.style.display=iCal.style.display=id&&!tr?'':'none';iRes.style.display=iDel.style.display=tr?'':'none';for(const e of f.elements)if(e.name)e.value=t[e.name]||'';draftAtt=[...(t.att||[])];draftLL=t.ll||null;links();renderAtts();dlg.showModal()}
 function links(){const a=f.address.value.trim(),q=draftLL?draftLL.join(','):a;lw.style.display=lg.style.display=q?'':'none';lw.href=draftLL?`https://waze.com/ul?ll=${q}&navigate=yes`:`https://waze.com/ul?q=${encodeURIComponent(a)}&navigate=yes`;lg.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 f.address.oninput=()=>{draftLL=null;links()};
 function here(){if(!navigator.geolocation)return alert('אין גישה למיקום');navigator.geolocation.getCurrentPosition(p=>{draftLL=[+p.coords.latitude.toFixed(6),+p.coords.longitude.toFixed(6)];if(!f.address.value)f.address.value='מיקום נוכחי';links()},()=>alert('לא ניתן לקבל מיקום'),{enableHighAccuracy:true,timeout:10000})}
@@ -130,6 +128,8 @@ const ch=()=>{const custom=calDate!=iso(now)&&calDate!=iso(tm);dch.innerHTML=`<b
 dch.querySelectorAll('button').forEach(b=>b.onclick=()=>{calDate=b.dataset.d;ch()});cpick.onchange=()=>{if(cpick.value){calDate=cpick.value;ch()}};const d=new Date(calDate+'T00:00');cm.textContent=HM[d.getMonth()];cd.textContent=d.getDate()};ch();cal.showModal()}
 function calSave(){const w=calDate+'T'+(ctime.value||'09:00'),id=calId;cal.close();act('נוסף ל-Google Calendar ✓ (הדגמה) · '+fmtD(calDate)+' '+w.slice(11),()=>byId(id).when=w)}
 
+function restore(){const id=editId,k=byId(id).prev||'work';dlg.close();act('שוחזר ל'+pn(k),()=>{const t=byId(id);t.page=k;I=I.filter(x=>x!==t);I.unshift(t)})}
+function delForever(){if(!confirm('למחוק לצמיתות?'))return;const id=editId;dlg.close();act('נמחק לצמיתות',()=>I=I.filter(x=>x.id!=id))}
 // ---- WhatsApp share
 function waText(t){const L=['*'+t.name+'*'];const q=t.ll?t.ll.join(','):t.address;
 if(t.address||t.ll)L.push('📍 '+(t.address||'מיקום')+'\n'+'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q));

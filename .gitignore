@@ -1,5 +1,10 @@
 node_modules
-package*.json
+www
 *.png
 !icon.png
 !icon192.png
+!assets/*.png
+!android/**/*.png
+*.jks
+t*.js
+dbg.js

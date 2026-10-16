@@ -1,4 +1,4 @@
-<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">
+<!doctype html><html lang="he" dir="rtl" style="--z:1"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <link rel="manifest" href="manifest.json"><meta name="theme-color" content="#f7f6f3"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="icon.png">
 <title>רן</title>
@@ -8,66 +8,77 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{--bg:#f7f6f3;--card:#fff;--ink:#17171a;--mute:#8e8e93;--line:#ececee;--acc:#b3261e;--soft:#f1f0ed;--ease:cubic-bezier(.2,.8,.2,1)}
 html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;font-family:Rubik,system-ui,-apple-system,Roboto,Arial;background:var(--bg);color:var(--ink)}
-header{padding:calc(env(safe-area-inset-top) + 22px) 24px 0;display:flex;align-items:flex-end;gap:8px}
-header h1{flex:1;font-size:38px;margin:0;font-weight:700;letter-spacing:-.8px;line-height:1}
-header .sub{display:block;font-size:13px;font-weight:400;color:var(--mute);letter-spacing:0;margin-bottom:6px}
-.ib{border:0;background:transparent;color:var(--ink);width:42px;height:42px;border-radius:50%;display:grid;place-items:center;transition:.2s}.ib:active{background:var(--soft)}.ib:disabled{opacity:.25}
-.ib svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-#tabs{display:flex;gap:4px;padding:18px 18px 8px}#tabs button{border:0;background:none;color:var(--mute);font:500 15px Rubik;padding:8px 14px;border-radius:999px;transition:.3s var(--ease)}#tabs button.on{background:var(--ink);color:#fff}#tabs span{opacity:.55;margin-inline-start:5px;font-size:12px}
-#pages{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;height:calc(100% - 150px - env(safe-area-inset-top))}#pages::-webkit-scrollbar{display:none}
-.page{flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;overflow-y:auto;padding:8px 18px 130px}
+header{padding:calc(env(safe-area-inset-top) + 1.375rem) 1.5rem 0;display:flex;align-items:flex-end;gap:0.5rem}
+header h1{flex:1;font-size:2.375rem;margin:0;font-weight:700;letter-spacing:-.8px;line-height:1}
+header .sub{display:block;font-size:0.8125rem;font-weight:400;color:var(--mute);letter-spacing:0;margin-bottom:0.375rem}
+.ib{border:0;background:transparent;color:var(--ink);width:2.625rem;height:2.625rem;border-radius:50%;display:grid;place-items:center;transition:.2s}.ib:active{background:var(--soft)}.ib:disabled{opacity:.25}
+.ib svg{width:1.375rem;height:1.375rem;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#tabs{display:flex;gap:0.25rem;padding:1.125rem 1.125rem 0.5rem}#tabs button{border:0;background:none;color:var(--mute);font:500 0.9375rem Rubik;padding:0.5rem 0.875rem;border-radius:62.4375rem;transition:.3s var(--ease)}#tabs button.on{background:var(--ink);color:#fff}#tabs span{opacity:.55;margin-inline-start:0.3125rem;font-size:0.75rem}
+#pages{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;height:calc(100% - 9.375rem - env(safe-area-inset-top))}#pages::-webkit-scrollbar{display:none}
+.page{flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;overflow-y:auto;padding:0.5rem 1.125rem 8.125rem}
 .list{min-height:60vh;list-style:none;margin:0;padding:0}
-.it{background:var(--card);border-radius:22px;padding:18px 20px;margin-bottom:10px;box-shadow:0 1px 1px rgba(0,0,0,.03),0 8px 24px -12px rgba(0,0,0,.08);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;animation:in .4s var(--ease) both;transition:transform .25s var(--ease),box-shadow .25s}
+.it{background:var(--card);border-radius:1.375rem;padding:1.125rem 1.25rem;margin-bottom:0.625rem;box-shadow:0 1px 1px rgba(0,0,0,.03),0 0.5rem 1.5rem -12px rgba(0,0,0,.08);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;animation:in .4s var(--ease) both;transition:transform .25s var(--ease),box-shadow .25s}
 .it:active{transform:scale(.985)}
-@keyframes in{from{opacity:0;transform:translateY(10px)}}
-.it b{display:block;font-size:17px;font-weight:600;line-height:1.35}
-.it .meta{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px;color:var(--mute);font-size:14px}
+@keyframes in{from{opacity:0;transform:translateY(0.625rem)}}
+.it b{display:block;font-size:1.0625rem;font-weight:600;line-height:1.35}
+.it .meta{display:flex;flex-wrap:wrap;gap:0.25rem 0.875rem;margin-top:0.375rem;color:var(--mute);font-size:0.875rem}
 .it .meta a{color:var(--acc);text-decoration:none;font-weight:500}
-.it .ind{display:flex;gap:6px;margin-top:10px}.it .ind i{font-style:normal;font-size:11.5px;color:#6b6b70;background:var(--soft);padding:3px 8px;border-radius:999px}
-.unc b::after{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:#e2a03f;margin-inline-start:8px;vertical-align:middle}
-.ghost{opacity:.2}.chosen{box-shadow:0 24px 50px -10px rgba(0,0,0,.25)!important;transform:scale(1.04)!important}
-.empty{color:#c0c0c4;text-align:center;margin-top:28vh;font-size:15px}
-#dots{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 26px);right:0;left:0;text-align:center;pointer-events:none}
-#dots i{display:inline-block;width:6px;height:6px;border-radius:3px;background:#d6d5d2;margin:0 3px;transition:.35s var(--ease)}#dots i.on{background:var(--ink);width:18px}
-#fab{position:fixed;left:22px;bottom:calc(env(safe-area-inset-bottom) + 56px);width:58px;height:58px;border-radius:20px;border:0;background:var(--ink);color:#fff;display:grid;place-items:center;box-shadow:0 14px 30px -8px rgba(0,0,0,.4);transition:transform .2s var(--ease)}#fab:active{transform:scale(.9)}#fab svg{width:26px;stroke:#fff;stroke-width:2}
-#edge{position:fixed;top:0;bottom:0;width:30px;pointer-events:none;opacity:0;transition:.2s}
-dialog{border:0;padding:0;background:transparent;max-width:100%;max-height:100%}dialog::backdrop{background:rgba(20,20,22,.28);backdrop-filter:blur(3px)}
-.sheet{width:100%;margin:auto 0 0}.sheet>div{background:#fff;border-radius:30px 30px 0 0;padding:10px 20px calc(env(safe-area-inset-bottom) + 18px);max-height:88vh;overflow:auto;animation:up .35s var(--ease)}
-.sheet>div::before{content:"";display:block;width:38px;height:5px;border-radius:3px;background:#dedede;margin:0 auto 16px}
+.it .ind{display:flex;gap:0.375rem;margin-top:0.625rem}.it .ind i{font-style:normal;font-size:0.71875rem;color:#6b6b70;background:var(--soft);padding:0.1875rem 0.5rem;border-radius:62.4375rem}
+.unc b::after{content:"";display:inline-block;width:0.375rem;height:0.375rem;border-radius:50%;background:#e2a03f;margin-inline-start:0.5rem;vertical-align:middle}
+.ghost{opacity:.2}.chosen{box-shadow:0 1.5rem 3.125rem -10px rgba(0,0,0,.25)!important;transform:scale(1.04)!important}
+.empty{color:#c0c0c4;text-align:center;margin-top:28vh;font-size:0.9375rem}
+#dots{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 1.625rem);right:0;left:0;text-align:center;pointer-events:none}
+#dots i{display:inline-block;width:0.375rem;height:0.375rem;border-radius:0.1875rem;background:#d6d5d2;margin:0 0.1875rem;transition:.35s var(--ease)}#dots i.on{background:var(--ink);width:1.125rem}
+#fab{position:fixed;left:1.375rem;bottom:calc(env(safe-area-inset-bottom) + 3.5rem);width:3.625rem;height:3.625rem;border-radius:1.25rem;border:0;background:var(--ink);color:#fff;display:grid;place-items:center;box-shadow:0 0.875rem 1.875rem -8px rgba(0,0,0,.4);transition:transform .2s var(--ease)}#fab:active{transform:scale(.9)}#fab svg{width:1.625rem;stroke:#fff;stroke-width:2}
+#edge{position:fixed;top:0;bottom:0;width:1.875rem;pointer-events:none;opacity:0;transition:.2s}
+dialog{border:0;padding:0;background:transparent;max-width:100%;max-height:100%}dialog::backdrop{background:rgba(20,20,22,.28);backdrop-filter:blur(0.1875rem)}
+.sheet{width:100%;margin:auto 0 0}.sheet>div{background:#fff;border-radius:1.875rem 1.875rem 0 0;padding:0.625rem 1.25rem calc(env(safe-area-inset-bottom) + 1.125rem);max-height:88vh;overflow:auto;animation:up .35s var(--ease)}
+.sheet>div::before{content:"";display:block;width:2.375rem;height:0.3125rem;border-radius:0.1875rem;background:#dedede;margin:0 auto 1rem}
 @keyframes up{from{transform:translateY(100%)}}
-.sheet h3{margin:0 0 16px;font-size:22px;font-weight:600}
-.fld{display:block;font-size:12.5px;color:var(--mute);margin:0 4px 6px}
-.sheet input,.sheet textarea{width:100%;padding:14px 16px;font:16px Rubik;border:0;background:var(--soft);border-radius:14px;margin-bottom:14px;color:var(--ink);outline:none;transition:box-shadow .2s}.sheet input:focus,.sheet textarea:focus{box-shadow:0 0 0 2px var(--ink)}
-.sheet textarea{min-height:80px;resize:vertical}
-.row{display:flex;gap:8px;margin:-6px 0 14px;flex-wrap:wrap}.chip{border:0;background:var(--soft);color:var(--ink);font:500 14px Rubik;padding:9px 14px;border-radius:999px;text-decoration:none}
-.btn{display:block;width:100%;padding:16px;font:500 16px Rubik;border:0;border-radius:16px;margin-top:8px;background:var(--soft);color:var(--ink)}.btn.p{background:var(--ink);color:#fff}.btn.d{color:var(--acc);background:#fbefee}
-.atts{display:flex;flex-wrap:wrap;gap:8px;margin:-4px 0 14px}.att{position:relative;width:72px;height:72px;border-radius:14px;background:var(--soft);overflow:hidden;display:grid;place-items:center;font-size:11px;text-align:center;color:#555;padding:4px;word-break:break-all}
-.att img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.att button{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:12px;z-index:2}
-#toast{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom) + 130px);background:var(--ink);color:#fff;border-radius:16px;padding:12px 12px 12px 18px;display:flex;align-items:center;gap:10px;z-index:40;transform:translateY(30px);opacity:0;pointer-events:none;transition:.35s var(--ease)}#toast.on{transform:none;opacity:1;pointer-events:auto}
-#toast span{flex:1;font-size:15px}#toast button{border:0;background:rgba(255,255,255,.12);color:#fff;font:600 14px Rubik;padding:8px 14px;border-radius:10px}
-#inst{position:fixed;left:16px;right:16px;top:calc(env(safe-area-inset-top) + 12px);background:#fff;border-radius:18px;padding:12px 14px;display:none;align-items:center;gap:10px;z-index:35;box-shadow:0 12px 40px -10px rgba(0,0,0,.25)}#inst b{flex:1;font-weight:500;font-size:14px}#inst button{border:0;border-radius:10px;padding:8px 12px;font:500 14px Rubik;background:var(--soft)}#inst #instB{background:var(--ink);color:#fff}
-.dchips{display:flex;gap:8px;margin-bottom:16px}.dchip{flex:1;border:0;background:var(--soft);border-radius:16px;padding:12px 6px;font:500 15px Rubik;color:var(--ink);transition:.25s var(--ease);position:relative}.dchip small{display:block;font-size:11.5px;color:var(--mute);font-weight:400;margin-top:2px}.dchip.on{background:var(--ink);color:#fff}.dchip.on small{color:#bbb}.dchip input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;padding:0}
-.calhd{display:flex;align-items:center;gap:12px;margin-bottom:18px}.calic{width:46px;height:50px;border-radius:12px;background:#fff;box-shadow:0 0 0 1px var(--line),0 6px 16px -8px rgba(0,0,0,.2);overflow:hidden;text-align:center;flex:none}.calic i{display:block;background:var(--acc);color:#fff;font:600 10px Rubik;font-style:normal;padding:2px 0}.calic b{font-size:20px;line-height:30px}
-.calhd h3{margin:0}.calhd p{margin:2px 0 0;color:var(--mute);font-size:14px}
-.tm{width:100%;font:600 28px Rubik!important;text-align:center;letter-spacing:1px}
+.sheet h3{margin:0 0 1rem;font-size:1.375rem;font-weight:600}
+.fld{display:block;font-size:0.78125rem;color:var(--mute);margin:0 0.25rem 0.375rem}
+.sheet input,.sheet textarea{width:100%;padding:0.875rem 1rem;font:1rem Rubik;border:0;background:var(--soft);border-radius:0.875rem;margin-bottom:0.875rem;color:var(--ink);outline:none;transition:box-shadow .2s}.sheet input:focus,.sheet textarea:focus{box-shadow:0 0 0 0.125rem var(--ink)}
+.sheet textarea{min-height:5rem;resize:vertical}
+.row{display:flex;gap:0.5rem;margin:-6px 0 0.875rem;flex-wrap:wrap}.chip{border:0;background:var(--soft);color:var(--ink);font:500 0.875rem Rubik;padding:0.5625rem 0.875rem;border-radius:62.4375rem;text-decoration:none}
+.btn{display:block;width:100%;padding:1rem;font:500 1rem Rubik;border:0;border-radius:1rem;margin-top:0.5rem;background:var(--soft);color:var(--ink)}.btn.p{background:var(--ink);color:#fff}.btn.d{color:var(--acc);background:#fbefee}
+.atts{display:flex;flex-wrap:wrap;gap:0.5rem;margin:-4px 0 0.875rem}.att{position:relative;width:4.5rem;height:4.5rem;border-radius:0.875rem;background:var(--soft);overflow:hidden;display:grid;place-items:center;font-size:0.6875rem;text-align:center;color:#555;padding:0.25rem;word-break:break-all}
+.att img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}.att button{position:absolute;top:0.1875rem;left:0.1875rem;width:1.375rem;height:1.375rem;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:0.75rem;z-index:2}
+#toast{position:fixed;left:1rem;right:1rem;bottom:calc(env(safe-area-inset-bottom) + 8.125rem);background:var(--ink);color:#fff;border-radius:1rem;padding:0.75rem 0.75rem 0.75rem 1.125rem;display:flex;align-items:center;gap:0.625rem;z-index:40;transform:translateY(1.875rem);opacity:0;pointer-events:none;transition:.35s var(--ease)}#toast.on{transform:none;opacity:1;pointer-events:auto}
+#toast span{flex:1;font-size:0.9375rem}#toast button{border:0;background:rgba(255,255,255,.12);color:#fff;font:600 0.875rem Rubik;padding:0.5rem 0.875rem;border-radius:0.625rem}
+#inst{position:fixed;left:1rem;right:1rem;top:calc(env(safe-area-inset-top) + 0.75rem);background:#fff;border-radius:1.125rem;padding:0.75rem 0.875rem;display:none;align-items:center;gap:0.625rem;z-index:35;box-shadow:0 0.75rem 2.5rem -10px rgba(0,0,0,.25)}#inst b{flex:1;font-weight:500;font-size:0.875rem}#inst button{border:0;border-radius:0.625rem;padding:0.5rem 0.75rem;font:500 0.875rem Rubik;background:var(--soft)}#inst #instB{background:var(--ink);color:#fff}
+.dchips{display:flex;gap:0.5rem;margin-bottom:1rem}.dchip{flex:1;border:0;background:var(--soft);border-radius:1rem;padding:0.75rem 0.375rem;font:500 0.9375rem Rubik;color:var(--ink);transition:.25s var(--ease);position:relative}.dchip small{display:block;font-size:0.71875rem;color:var(--mute);font-weight:400;margin-top:0.125rem}.dchip.on{background:var(--ink);color:#fff}.dchip.on small{color:#bbb}.dchip input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;padding:0}
+.calhd{display:flex;align-items:center;gap:0.75rem;margin-bottom:1.125rem}.calic{width:2.875rem;height:3.125rem;border-radius:0.75rem;background:#fff;box-shadow:0 0 0 1px var(--line),0 0.375rem 1rem -8px rgba(0,0,0,.2);overflow:hidden;text-align:center;flex:none}.calic i{display:block;background:var(--acc);color:#fff;font:600 0.625rem Rubik;font-style:normal;padding:0.125rem 0}.calic b{font-size:1.25rem;line-height:1.875rem}
+.calhd h3{margin:0}.calhd p{margin:0.125rem 0 0;color:var(--mute);font-size:0.875rem}
+.tm{width:100%;font:600 1.75rem Rubik!important;text-align:center;letter-spacing:1px}
 .it .ind i.cal{background:#fbefee;color:var(--acc);font-weight:500}
-.btn.wa{background:#e8f8ee;color:#128c4a;display:flex;align-items:center;justify-content:center;gap:8px}.btn.wa svg{width:20px;height:20px;fill:#25d366}
-.shd{display:flex;align-items:center;gap:10px;margin-bottom:16px}.shd h3{flex:1;margin:0!important}#sic{display:flex;gap:6px}
-.ic{width:40px;height:40px;border-radius:50%;border:0;background:var(--soft);display:grid;place-items:center;transition:.2s var(--ease)}.ic:active{transform:scale(.9)}.ic:focus{outline:none}.ic svg{width:20px;height:20px;fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.btn.wa{background:#e8f8ee;color:#128c4a;display:flex;align-items:center;justify-content:center;gap:0.5rem}.btn.wa svg{width:1.25rem;height:1.25rem;fill:#25d366}
+.shd{display:flex;align-items:center;gap:0.625rem;margin-bottom:1rem}.shd h3{flex:1;margin:0!important}#sic{display:flex;gap:0.375rem}
+.ic{width:2.5rem;height:2.5rem;border-radius:50%;border:0;background:var(--soft);display:grid;place-items:center;transition:.2s var(--ease)}.ic:active{transform:scale(.9)}.ic:focus{outline:none}.ic svg{width:1.25rem;height:1.25rem;fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .ic.wa{background:#e8f8ee}.ic.wa svg{fill:#25d366;stroke:none}.ic.del{background:#fbefee}.ic.del svg{stroke:var(--acc)}
-.tsk>div{max-height:60vh;padding:6px 16px calc(env(safe-area-inset-bottom) + 12px)}.tsk>div::before{margin-bottom:8px}
-.tsk .shd{margin-bottom:4px}.tsk>div{overscroll-behavior:contain}#dtt{flex:1;font-size:12.5px;color:var(--mute)}.tsk .ic{width:34px;height:34px}.tsk .ic svg{width:17px;height:17px}
-.tsk input,.tsk textarea{background:transparent;margin:0;padding:8px 4px;border-radius:10px}.tsk input:focus,.tsk textarea:focus{box-shadow:none;background:var(--soft)}
-.tsk .nm{font:600 20px Rubik;padding:6px 4px 8px}
-.ln{display:flex;align-items:center;gap:4px;border-top:1px solid var(--line);min-height:44px}.li{width:24px;text-align:center;font-size:14px;opacity:.7;flex:none}.ln input,.ln textarea{flex:1;min-width:0;font-size:15px!important}
-.ln textarea{min-height:0;resize:none;field-sizing:content;max-height:120px}
-.mi{flex:none;width:32px;height:32px;border-radius:50%;border:0;background:var(--soft);font:600 12px Rubik;color:var(--ink);display:grid;place-items:center;text-decoration:none}
-.ln.at .atts{flex:1;margin:0;gap:6px;padding:6px 0;flex-wrap:nowrap;overflow-x:auto}.ln.at .att{width:40px;height:40px;border-radius:10px;flex:none;font-size:8px}.ln.at .att button{width:16px;height:16px;font-size:9px;top:1px;left:1px}
+.tsk>div{max-height:60vh;padding:0.375rem 1rem calc(env(safe-area-inset-bottom) + 0.75rem)}.tsk>div::before{margin-bottom:0.5rem}
+.tsk .shd{margin-bottom:0.25rem}.tsk>div{overscroll-behavior:contain}#dtt{flex:1;font-size:0.78125rem;color:var(--mute)}.tsk .ic{width:2.125rem;height:2.125rem}.tsk .ic svg{width:1.0625rem;height:1.0625rem}
+.tsk input,.tsk textarea{background:transparent;margin:0;padding:0.5rem 0.25rem;border-radius:0.625rem}.tsk input:focus,.tsk textarea:focus{box-shadow:none;background:var(--soft)}
+.tsk .nm{font:600 1.25rem Rubik;padding:0.375rem 0.25rem 0.5rem}
+.ln{display:flex;align-items:center;gap:0.25rem;border-top:1px solid var(--line);min-height:2.75rem}.li{width:1.5rem;text-align:center;font-size:0.875rem;opacity:.7;flex:none}.ln input,.ln textarea{flex:1;min-width:0;font-size:0.9375rem!important}
+.ln textarea{min-height:0;resize:none;field-sizing:content;max-height:7.5rem}
+.mi{flex:none;width:2rem;height:2rem;border-radius:50%;border:0;background:var(--soft);font:600 0.75rem Rubik;color:var(--ink);display:grid;place-items:center;text-decoration:none}
+.ln.at .atts{flex:1;margin:0;gap:0.375rem;padding:0.375rem 0;flex-wrap:nowrap;overflow-x:auto}.ln.at .att{width:2.5rem;height:2.5rem;border-radius:0.625rem;flex:none;font-size:0.5rem}.ln.at .att button{width:1rem;height:1rem;font-size:0.5625rem;top:1px;left:1px}
 #dbox{transition:transform .45s cubic-bezier(.34,1.4,.64,1)}
 #toast.quick{transition:opacity .18s ease-out,transform .18s ease-out}
+html{font-size:calc(16px * var(--z,1));touch-action:pan-x pan-y}
+#onb{position:fixed;inset:0;z-index:60;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;padding:2rem;text-align:center;animation:in .5s var(--ease)}
+#onb img{width:5.5rem;height:5.5rem;border-radius:1.5rem;box-shadow:0 1.2rem 2.5rem -1rem rgba(0,0,0,.35);margin-bottom:1.8rem}
+#onb h2{font-size:2rem;margin:0 0 .6rem;font-weight:700;letter-spacing:-.03rem}#onb p{color:var(--mute);font-size:1rem;line-height:1.5;margin:0 0 2.4rem;max-width:20rem}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:.7rem;width:100%;max-width:20rem;padding:1rem;border-radius:1rem;border:1px solid var(--line);background:#fff;font:500 1rem Rubik;color:var(--ink);box-shadow:0 .1rem .3rem rgba(0,0,0,.05)}.gbtn svg{width:1.3rem;height:1.3rem}
+.skip{margin-top:1rem;border:0;background:none;color:var(--mute);font:400 .95rem Rubik;padding:.8rem}
+#onb small{position:absolute;bottom:calc(env(safe-area-inset-bottom) + 1.4rem);color:#b5b5b9;font-size:.75rem;max-width:20rem}
+.acc{font-size:.95rem;color:var(--mute);margin:-.4rem 0 1rem}
 </style></head><body>
 <header><h1><span class="sub">המשימות של רן</span><span id="ttl">עבודה</span></h1>
-<button class="ib" id="undoB" onclick="undo()" disabled title="בטל"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button></header>
+<button class="ib" id="accB" onclick="openAcc()" title="גיבוי"><svg viewBox="0 0 24 24"><path d="M7 18a4.5 4.5 0 0 1-.7-8.95A6 6 0 0 1 17.8 8.6 4.2 4.2 0 0 1 17.5 18z"/></svg></button><button class="ib" id="undoB" onclick="undo()" disabled title="בטל"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button></header>
+<div id="onb"><img src="icon.png" alt=""><h2>המשימות של רן</h2><p>כל המשימות במקום אחד – עבודה, בית ומה שבאמצע. גבה הכל ל-Google Drive ושחזר בכל טלפון.</p>
+<button class="gbtn" onclick="gSignIn(true)"><svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34 6 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2A12 12 0 0 1 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3a12 12 0 0 1-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>התחבר עם Google</button><button class="skip" onclick="onbDone()">המשך בלי חשבון</button><small>הנתונים מוצפנים במכשיר. הגיבוי נשמר בתיקיית אפליקציה פרטית ב-Drive שלך.</small></div>
+<dialog id="accd" class="sheet"><div><h3>גיבוי ל-Google Drive</h3><p class="acc" id="accs"></p><div id="accb"></div><button class="btn" onclick="accd.close()">סגור</button></div></dialog>
 <div id="tabs"></div><div id="pages" onscroll="dt()"></div><div id="dots"></div>
 <button id="fab" onclick="edit()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
 <div id="toast"><span id="tmsg"></span><button onclick="undo()">בטל</button></div>
@@ -85,13 +96,64 @@ dialog{border:0;padding:0;background:transparent;max-width:100%;max-height:100%}
 <button class="btn p" onclick="calSave()">הוסף</button><button class="btn" onclick="cal.close()">לא עכשיו</button></div></dialog>
 <script>
 const P=[['ran','רן'],['gen','כללי'],['work','עבודה'],['trash','זבל']],K='ran_items_v2';
-let I=JSON.parse(localStorage.getItem(K)||'null');
-if(!I){I=[["שוקי קרני – הצעת מחיר"],["אלי אלפא – חשמל?"],["ויטל – הרצוג?","","הרצוג?"],["איתי (שמריהו?)"],["רוזן?","","","054-5413230"],["ראובן – חרמון?","","חרמון?"],["רבי עקיבא – ?","","רבי עקיבא, בני ברק"],["אלחנן? – כיור/אמבטיה?","","","052-4299120"],["הוד האוצמן?"],["סידורים: דבק, ויטה?, רישום, אבא, כנפה?","gen"],["מראה 99×77? – 3300 ₪","","","052-2301248"],["עמוד 1 – כ-30 שורות לתמלל עם רן"]].map((a,i)=>({id:'s'+i,name:a[0],page:a[1]||'work',address:a[2]||'',phone:a[3]||''}))}
-I.forEach(t=>{t.att=t.att||[];t.notes=t.notes||''});
-const save=()=>localStorage.setItem(K,JSON.stringify(I)),byId=id=>I.find(x=>x.id==id),esc=s=>String(s||'').replace(/[&<>"]/g,c=>'&#'+c.charCodeAt(0)+';'),pn=k=>P.find(p=>p[0]==k)[1];
-// ---- IndexedDB for attachments
-let dbp=new Promise(r=>{const q=indexedDB.open('ran_files',1);q.onupgradeneeded=()=>q.result.createObjectStore('f');q.onsuccess=()=>r(q.result)});
-const idb=(m,...a)=>dbp.then(db=>new Promise((r,j)=>{const q=db.transaction('f',m=='get'?'readonly':'readwrite').objectStore('f')[m](...a);q.onsuccess=()=>r(q.result);q.onerror=j}));
+// ===== config =====
+const GOOGLE_WEB_CLIENT_ID=''; // TODO: Web OAuth client ID from Google Cloud (see README)
+const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.appdata';
+const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()),PL=(window.Capacitor&&Capacitor.Plugins)||{};
+let I=[];const SEED=()=>[["שוקי קרני – הצעת מחיר"],["אלי אלפא – חשמל?"],["ויטל – הרצוג?","","הרצוג?"],["איתי (שמריהו?)"],["רוזן?","","","054-5413230"],["ראובן – חרמון?","","חרמון?"],["רבי עקיבא – ?","","רבי עקיבא, בני ברק"],["אלחנן? – כיור/אמבטיה?","","","052-4299120"],["הוד האוצמן?"],["סידורים: דבק, ויטה?, רישום, אבא, כנפה?","gen"],["מראה 99×77? – 3300 ₪","","","052-2301248"],["עמוד 1 – כ-30 שורות לתמלל עם רן"]].map((a,i)=>({id:'s'+i,name:a[0],page:a[1]||'work',address:a[2]||'',phone:a[3]||''}));
+const byId=id=>I.find(x=>x.id==id),esc=s=>String(s||'').replace(/[&<>"]/g,c=>'&#'+c.charCodeAt(0)+';'),pn=k=>P.find(p=>p[0]==k)[1];
+// ===== encrypted local storage (AES-256-GCM; key in Android Keystore via SecureStorage, or non-extractable WebCrypto key on web)
+let dbp=new Promise(r=>{const q=indexedDB.open('ran_files',2);q.onupgradeneeded=()=>{const d=q.result;if(!d.objectStoreNames.contains('f'))d.createObjectStore('f');if(!d.objectStoreNames.contains('k'))d.createObjectStore('k')};q.onsuccess=()=>r(q.result)});
+const raw=(st,m,...a)=>dbp.then(db=>new Promise((r,j)=>{const q=db.transaction(st,m=='get'?'readonly':'readwrite').objectStore(st)[m](...a);q.onsuccess=()=>r(q.result);q.onerror=()=>j(q.error)}));
+const b64=u=>btoa(String.fromCharCode(...new Uint8Array(u))),unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+let KEY;async function getKey(){if(KEY)return KEY;
+ if(NATIVE&&PL.SecureStorage){const SS=PL.SecureStorage;let r=null;try{r=(await SS.internalGetItem({key:'ran.datakey'})).data}catch(e){}
+  if(!r){const k=crypto.getRandomValues(new Uint8Array(32));r=b64(k);await SS.internalSetItem({key:'ran.datakey',data:r})}
+  KEY=await crypto.subtle.importKey('raw',unb64(r),'AES-GCM',false,['encrypt','decrypt'])}
+ else{KEY=await raw('k','get','dk');if(!KEY){KEY=await crypto.subtle.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);await raw('k','put',KEY,'dk')}}
+ return KEY}
+async function enc(buf){const iv=crypto.getRandomValues(new Uint8Array(12));return{iv,ct:await crypto.subtle.encrypt({name:'AES-GCM',iv},await getKey(),buf)}}
+async function dec(o){return crypto.subtle.decrypt({name:'AES-GCM',iv:o.iv},await getKey(),o.ct)}
+const idb=async(m,v,id)=>{if(m=='put'){const e=await enc(await v.arrayBuffer());e.type=v.type;return raw('f','put',e,v===undefined?undefined:id)}
+ if(m=='get'){const o=await raw('f','get',v);if(!o)return o;if(o instanceof Blob)return o;return new Blob([await dec(o)],{type:o.type})}return raw('f',m,v,id)};
+let svT;function save(){clearTimeout(svT);svT=setTimeout(flush,120);scheduleBackup()}
+async function flush(){clearTimeout(svT);const e=await enc(new TextEncoder().encode(JSON.stringify(I)));await raw('f','put',e,'__state');localStorage.removeItem(K)}
+addEventListener('visibilitychange',()=>{if(document.hidden)flush()});
+async function loadState(){const o=await raw('f','get','__state');if(o&&!(o instanceof Blob)){try{return JSON.parse(new TextDecoder().decode(await dec(o)))}catch(e){console.warn('decrypt failed',e)}}
+ const old=localStorage.getItem(K);return old?JSON.parse(old):null}
+// ===== Google sign-in + Drive appData backup =====
+let gTok=localStorage.gTokExp>Date.now()?sessionStorage.gTok:null,gUser=localStorage.gUser||'',bkT,backing=false;
+async function gSignIn(fromOnb){if(!GOOGLE_WEB_CLIENT_ID){toast('Google עדיין לא מוגדר (חסר Client ID) – ממשיך במצב מקומי',1);if(fromOnb)onbDone();return false}
+ if(!NATIVE||!PL.SocialLogin){toast('התחברות Google זמינה באפליקציית האנדרואיד',1);if(fromOnb)onbDone();return false}
+ try{await PL.SocialLogin.initialize({google:{webClientId:GOOGLE_WEB_CLIENT_ID,mode:'online'}});
+  const r=(await PL.SocialLogin.login({provider:'google',options:{scopes:[DRIVE_SCOPE,'email','profile']}})).result;
+  gTok=r.accessToken&&r.accessToken.token;sessionStorage.gTok=gTok;localStorage.gTokExp=Date.now()+50*60e3;gUser=(r.profile&&r.profile.email)||'';localStorage.gUser=gUser;localStorage.gOn=1;
+  if(fromOnb)onbDone();await restoreIfNeeded();scheduleBackup(1);return true}catch(e){toast('ההתחברות נכשלה',1);return false}}
+async function gfetch(url,opt={},retry=1){if(!gTok&&localStorage.gOn)await gSignIn();if(!gTok)throw new Error('no token');
+ const r=await fetch(url,{...opt,headers:{...(opt.headers||{}),Authorization:'Bearer '+gTok}});if(r.status==401&&retry){gTok=null;await gSignIn();return gfetch(url,opt,0)}if(!r.ok)throw new Error('drive '+r.status);return r}
+const DQ='https://www.googleapis.com/drive/v3/files',DU='https://www.googleapis.com/upload/drive/v3/files';
+async function dList(){const r=await gfetch(DQ+'?spaces=appDataFolder&pageSize=1000&fields=files(id,name,modifiedTime)');return (await r.json()).files}
+async function dPut(name,blob,existing){const meta=existing?{}:{name,parents:['appDataFolder']},fd=new FormData();fd.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));fd.append('file',blob);
+ return gfetch((existing?DU+'/'+existing:DU)+'?uploadType=multipart',{method:existing?'PATCH':'POST',body:fd})}
+function scheduleBackup(now){if(!localStorage.gOn)return;clearTimeout(bkT);bkT=setTimeout(backup,now?100:5000)}
+async function backup(){if(backing)return scheduleBackup();backing=true;try{const fs=await dList(),by=Object.fromEntries(fs.map(f=>[f.name,f.id]));
+ for(const t of I)for(const a of t.att||[])if(!by['att_'+a.id]){const b=await idb('get',a.id);if(b)await dPut('att_'+a.id,b)}
+ await dPut('state.json',new Blob([JSON.stringify({v:1,at:Date.now(),items:I})],{type:'application/json'}),by['state.json']);localStorage.lastBk=Date.now()}catch(e){console.warn(e)}backing=false}
+async function restoreIfNeeded(){try{const fs=await dList(),st=fs.find(f=>f.name=='state.json');if(!st)return;
+ const local=I.some(t=>!/^s\d+$/.test(t.id));if(local&&!confirm('נמצא גיבוי ב-Drive. לשחזר אותו במקום הנתונים במכשיר?'))return;
+ const d=await (await gfetch(DQ+'/'+st.id+'?alt=media')).json();for(const t of d.items)for(const a of t.att||[]){const f=fs.find(x=>x.name=='att_'+a.id);if(f&&!(await raw('f','get',a.id))){await idb('put',await (await gfetch(DQ+'/'+f.id+'?alt=media')).blob(),a.id)}}
+ H.push(JSON.stringify(I));I=d.items;await flush();draw();toast('שוחזר מ-Drive ✓')}catch(e){toast('שחזור נכשל',1)}}
+function gOut(){localStorage.removeItem('gOn');gTok=null;sessionStorage.removeItem('gTok');gUser='';localStorage.removeItem('gUser');try{PL.SocialLogin&&PL.SocialLogin.logout({provider:'google'})}catch(e){}accd.close();toast('התנתקת',1)}
+function openAcc(){const on=!!localStorage.gOn;accs.textContent=on?`מחובר${gUser?' כ-'+gUser:''} · גיבוי אחרון: ${localStorage.lastBk?new Date(+localStorage.lastBk).toLocaleString('he-IL'):'עדיין לא'}`:'לא מחובר. הנתונים נשמרים רק במכשיר (מוצפנים).';
+ accb.innerHTML=on?'<button class="btn p" onclick="backup().then(()=>{accd.close();toast(\'גובה ✓\',1)})">גבה עכשיו</button><button class="btn" onclick="accd.close();restoreIfNeeded()">שחזר מ-Drive</button><button class="btn d" onclick="gOut()">התנתק</button>':'<button class="btn p" onclick="accd.close();gSignIn()">התחבר עם Google</button>';accd.showModal()}
+function onbDone(){localStorage.onb=1;onb.style.display='none'}
+// ===== pinch to scale UI =====
+(function(){let z=+localStorage.uiZ||1,d0=0,z0=1,raf;const set=v=>{z=Math.min(1.6,Math.max(.8,v));if(!raf)raf=requestAnimationFrame(()=>{raf=0;document.documentElement.style.setProperty('--z',z.toFixed(3))})};set(z);
+ const dist=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+ document.addEventListener('touchstart',e=>{if(e.touches.length==2){d0=dist(e.touches);z0=z}},{passive:true,capture:true});
+ document.addEventListener('touchmove',e=>{if(e.touches.length==2&&d0){e.preventDefault();e.stopPropagation();set(z0*dist(e.touches)/d0)}},{passive:false,capture:true});
+ document.addEventListener('touchend',e=>{if(d0&&e.touches.length<2){d0=0;localStorage.uiZ=z.toFixed(3);go(curPage,1)}},{capture:true});
+ document.addEventListener('gesturestart',e=>e.preventDefault())})();
 // ---- history / undo
 const H=[];function act(label,fn){H.push(JSON.stringify(I));if(H.length>60)H.shift();fn();save();draw();toast(label)}
 function undo(){if(!H.length)return;I=JSON.parse(H.pop());save();draw();toast('בוטל',1)}
@@ -169,5 +231,7 @@ let dp;const standalone=matchMedia('(display-mode: fullscreen),(display-mode: st
 function instDone(){inst.style.display='none';localStorage.instShown=1}
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;if(!localStorage.instShown&&!standalone){inst.style.display='flex';instB.onclick=()=>{dp.prompt();instDone()}}});
 if(/iphone|ipad/i.test(navigator.userAgent)&&!standalone&&!localStorage.instShown){instT.textContent='שיתוף ⬆ ← "הוסף למסך הבית"';instB.style.display='none';inst.style.display='flex'}
-save();draw();go(2,1);if('serviceWorker'in navigator&&location.protocol=='https:')navigator.serviceWorker.register('sw.js');
+(async()=>{I=(await loadState())||SEED();I.forEach(t=>{t.att=t.att||[];t.notes=t.notes||''});await flush();draw();go(2,1);
+if(!localStorage.onb)onb.style.display='flex';if(localStorage.gOn)scheduleBackup();
+if(!NATIVE&&'serviceWorker'in navigator&&location.protocol=='https:')navigator.serviceWorker.register('sw.js')})();
 </script></body></html>

@@ -56,7 +56,7 @@ dialog{border:0;padding:0;background:transparent;max-width:100%;max-height:100%}
 .ic{width:40px;height:40px;border-radius:50%;border:0;background:var(--soft);display:grid;place-items:center;transition:.2s var(--ease)}.ic:active{transform:scale(.9)}.ic:focus{outline:none}.ic svg{width:20px;height:20px;fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .ic.wa{background:#e8f8ee}.ic.wa svg{fill:#25d366;stroke:none}.ic.del{background:#fbefee}.ic.del svg{stroke:var(--acc)}
 .tsk>div{max-height:60vh;padding:6px 16px calc(env(safe-area-inset-bottom) + 12px)}.tsk>div::before{margin-bottom:8px}
-.tsk .shd{margin-bottom:4px;touch-action:none}#dtt{flex:1;font-size:12.5px;color:var(--mute)}.tsk .ic{width:34px;height:34px}.tsk .ic svg{width:17px;height:17px}
+.tsk .shd{margin-bottom:4px}.tsk>div{overscroll-behavior:contain}#dtt{flex:1;font-size:12.5px;color:var(--mute)}.tsk .ic{width:34px;height:34px}.tsk .ic svg{width:17px;height:17px}
 .tsk input,.tsk textarea{background:transparent;margin:0;padding:8px 4px;border-radius:10px}.tsk input:focus,.tsk textarea:focus{box-shadow:none;background:var(--soft)}
 .tsk .nm{font:600 20px Rubik;padding:6px 4px 8px}
 .ln{display:flex;align-items:center;gap:4px;border-top:1px solid var(--line);min-height:44px}.li{width:24px;text-align:center;font-size:14px;opacity:.7;flex:none}.ln input,.ln textarea{flex:1;min-width:0;font-size:15px!important}
@@ -132,11 +132,16 @@ function here(){if(!navigator.geolocation)return alert('אין גישה למיק
 async function addAtt(inp){for(const file of inp.files){const id='a'+Date.now()+Math.random().toString(36).slice(2,6);await idb('put',file,id);draftAtt.push({id,name:file.name,type:file.type})}inp.value='';renderAtts();changed()}
 async function renderAtts(){atts.innerHTML='';for(const a of draftAtt){const d=document.createElement('div');d.className='att';d.innerHTML=`<button type="button">✕</button>${esc(a.name)}`;d.querySelector('button').onclick=e=>{e.stopPropagation();draftAtt=draftAtt.filter(x=>x!==a);renderAtts();changed()};
 const b=await idb('get',a.id);if(b){const u=URL.createObjectURL(b);if(/^image/.test(a.type)){const im=new Image();im.src=u;d.appendChild(im)}d.onclick=()=>open(u,'_blank')}atts.appendChild(d)}}
-// swipe-down to close (handle/header)
-(function(){let y0=null,dy=0,t0;const st=e=>{const r=dbox.getBoundingClientRect(),y=e.touches[0].clientY;if(y-r.top>56&&!e.target.closest('#dhd'))return;if(e.target.closest('button,a'))return;y0=y;dy=0;t0=Date.now();dbox.style.transition='none'};
-dbox.addEventListener('touchstart',st,{passive:true});
-dbox.addEventListener('touchmove',e=>{if(y0==null)return;dy=Math.max(0,e.touches[0].clientY-y0);dbox.style.transform=`translateY(${dy}px)`;e.preventDefault()},{passive:false});
-dbox.addEventListener('touchend',()=>{if(y0==null)return;y0=null;const v=dy/Math.max(1,Date.now()-t0);dbox.style.transition='';if(dy>90||v>.5&&dy>30){dbox.style.transition='transform .22s ease-in';dbox.style.transform='translateY(100%)';setTimeout(()=>dlg.close(),200)}else dbox.style.transform=''})})();
+// swipe-down to close: anywhere on the sheet or backdrop
+(function(){let y0=null,x0,dy=0,t0,on=false,tgt;
+dlg.addEventListener('touchstart',e=>{const t=e.touches[0];y0=t.clientY;x0=t.clientX;dy=0;on=false;t0=Date.now();tgt=e.target},{passive:true});
+dlg.addEventListener('touchmove',e=>{if(y0==null)return;const t=e.touches[0],my=t.clientY-y0,mx=t.clientX-x0;
+ if(!on){if(Math.abs(mx)>12&&Math.abs(mx)>Math.abs(my)){y0=null;return}if(my<-6){y0=null;return}if(my<10)return;
+  const sc=tgt.closest&&tgt.closest('textarea,.atts');if(sc&&sc.scrollTop>0){y0=null;return}
+  on=true;y0=t.clientY;dbox.style.transition='none';if(document.activeElement&&document.activeElement.blur)document.activeElement.blur()}
+ e.preventDefault();dy=Math.max(0,t.clientY-y0);dbox.style.transform=`translateY(${dy}px)`},{passive:false});
+dlg.addEventListener('touchend',e=>{if(y0==null||!on){y0=null;return}y0=null;on=false;e.preventDefault();const v=dy/Math.max(1,Date.now()-t0);dbox.style.transition='';
+ if(dy>90||v>.5&&dy>30){dbox.style.transition='transform .22s ease-in';dbox.style.transform='translateY(110%)';setTimeout(()=>dlg.close(),200)}else dbox.style.transform=''})})();
 
 // ---- calendar (visual mock)
 let calId=null,calDate=null;const iso=d=>d.toISOString().slice(0,10),HM=['ינו','פבר','מרץ','אפר','מאי','יונ','יול','אוג','ספט','אוק','נוב','דצמ'];

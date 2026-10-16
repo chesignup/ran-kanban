@@ -51,6 +51,7 @@ dialog{border:0;padding:0;background:transparent;max-width:100%;max-height:100%}
 .calhd h3{margin:0}.calhd p{margin:2px 0 0;color:var(--mute);font-size:14px}
 .tm{width:100%;font:600 28px Rubik!important;text-align:center;letter-spacing:1px}
 .it .ind i.cal{background:#fbefee;color:var(--acc);font-weight:500}
+.btn.wa{background:#e8f8ee;color:#128c4a;display:flex;align-items:center;justify-content:center;gap:8px}.btn.wa svg{width:20px;height:20px;fill:#25d366}
 </style></head><body>
 <header><h1><span class="sub">המשימות של רן</span><span id="ttl">עבודה</span></h1>
 <button class="ib" id="undoB" onclick="undo()" disabled title="בטל"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button></header>
@@ -105,7 +106,7 @@ document.addEventListener('touchmove',e=>edgeCheck(e.touches[0].clientX),{passiv
 document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d)d.close()}));
 function openMenu(id){const t=byId(id);mt.textContent=t.name;let h='';
 if(t.page=='trash')h=`<button class="btn p" onclick="mvTo('${id}','${t.prev||'work'}')">שחזר ל${pn(t.prev||'work')}</button><button class="btn d" onclick="if(confirm('למחוק לצמיתות?')){menu.close();act('נמחק לצמיתות',()=>I=I.filter(x=>x.id!='${id}'))}">מחק לצמיתות</button>`;
-else h=`<button class="btn p" onclick="menu.close();edit('${id}')">פתח / ערוך</button><button class="btn" onclick="menu.close();askCal('${id}')">📅 ${t.when?'שנה מועד ביומן':'הוסף ליומן'}</button>`+P.filter(p=>p[0]!='trash'&&p[0]!=t.page).map(([k,n])=>`<button class="btn" onclick="mvTo('${id}','${k}')">העבר ל${n}</button>`).join('')+`<button class="btn d" onclick="mvTo('${id}','trash')">העבר לזבל</button>`;
+else h=`<button class="btn p" onclick="menu.close();edit('${id}')">פתח / ערוך</button><button class="btn wa" onclick="menu.close();shareWA('${id}')"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.4 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 1.9 1.1 1 2 1.3 2.3 1.4.3.1.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg>שתף בוואטסאפ</button><button class="btn" onclick="menu.close();askCal('${id}')">📅 ${t.when?'שנה מועד ביומן':'הוסף ליומן'}</button>`+P.filter(p=>p[0]!='trash'&&p[0]!=t.page).map(([k,n])=>`<button class="btn" onclick="mvTo('${id}','${k}')">העבר ל${n}</button>`).join('')+`<button class="btn d" onclick="mvTo('${id}','trash')">העבר לזבל</button>`;
 mb.innerHTML=h;menu.showModal()}
 function mvTo(id,k){menu.close();act(k=='trash'?'הועבר לזבל':'הועבר ל'+pn(k),()=>{const t=byId(id);if(k=='trash')t.prev=t.page;t.page=k;I=I.filter(x=>x!==t);k=='trash'?I.unshift(t):I.push(t)});if(k=='work'||k=='ran')setTimeout(()=>askCal(id),350)}
 // ---- edit sheet
@@ -128,6 +129,16 @@ calDate=t.when?t.when.slice(0,10):iso(now);ctime.value=t.when?t.when.slice(11,16
 const ch=()=>{const custom=calDate!=iso(now)&&calDate!=iso(tm);dch.innerHTML=`<button class="dchip${calDate==iso(now)?' on':''}" data-d="${iso(now)}">היום<small>${now.getDate()} ${HM[now.getMonth()]}</small></button><button class="dchip${calDate==iso(tm)?' on':''}" data-d="${iso(tm)}">מחר<small>${tm.getDate()} ${HM[tm.getMonth()]}</small></button><label class="dchip${custom?' on':''}">${custom?fmtD(calDate):'בחר תאריך'}<small>${custom?'שנה':'📅'}</small><input type="date" id="cpick" value="${calDate}"></label>`;
 dch.querySelectorAll('button').forEach(b=>b.onclick=()=>{calDate=b.dataset.d;ch()});cpick.onchange=()=>{if(cpick.value){calDate=cpick.value;ch()}};const d=new Date(calDate+'T00:00');cm.textContent=HM[d.getMonth()];cd.textContent=d.getDate()};ch();cal.showModal()}
 function calSave(){const w=calDate+'T'+(ctime.value||'09:00'),id=calId;cal.close();act('נוסף ל-Google Calendar ✓ (הדגמה) · '+fmtD(calDate)+' '+w.slice(11),()=>byId(id).when=w)}
+
+// ---- WhatsApp share
+function waText(t){const L=['*'+t.name+'*'];const q=t.ll?t.ll.join(','):t.address;
+if(t.address||t.ll)L.push('📍 '+(t.address||'מיקום')+'\n'+'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q));
+if(t.phone)L.push('📞 '+t.phone);if(t.when){const d=new Date(t.when);L.push('📅 '+d.toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'})+' בשעה '+t.when.slice(11))}
+if(t.notes)L.push('📝 '+t.notes);return L.join('\n\n')}
+async function shareWA(id){const t=byId(id),text=waText(t);
+if(navigator.share){try{const files=[];for(const a of (t.att||[]).filter(a=>/^image/.test(a.type))){const b=await idb('get',a.id);if(b)files.push(new File([b],a.name||'photo.jpg',{type:a.type}))}
+ const d={text};if(files.length&&navigator.canShare&&navigator.canShare({files}))d.files=files;await navigator.share(d);return}catch(e){if(e.name=='AbortError')return}}
+open('https://wa.me/?text='+encodeURIComponent(text),'_blank')}
 // ---- install prompt (once)
 let dp;const standalone=matchMedia('(display-mode: fullscreen),(display-mode: standalone)').matches||navigator.standalone;
 function instDone(){inst.style.display='none';localStorage.instShown=1}

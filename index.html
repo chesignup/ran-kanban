@@ -46,6 +46,11 @@ dialog{border:0;padding:0;background:transparent;max-width:100%;max-height:100%}
 #toast{position:fixed;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom) + 130px);background:var(--ink);color:#fff;border-radius:16px;padding:12px 12px 12px 18px;display:flex;align-items:center;gap:10px;z-index:40;transform:translateY(30px);opacity:0;pointer-events:none;transition:.35s var(--ease)}#toast.on{transform:none;opacity:1;pointer-events:auto}
 #toast span{flex:1;font-size:15px}#toast button{border:0;background:rgba(255,255,255,.12);color:#fff;font:600 14px Rubik;padding:8px 14px;border-radius:10px}
 #inst{position:fixed;left:16px;right:16px;top:calc(env(safe-area-inset-top) + 12px);background:#fff;border-radius:18px;padding:12px 14px;display:none;align-items:center;gap:10px;z-index:35;box-shadow:0 12px 40px -10px rgba(0,0,0,.25)}#inst b{flex:1;font-weight:500;font-size:14px}#inst button{border:0;border-radius:10px;padding:8px 12px;font:500 14px Rubik;background:var(--soft)}#inst #instB{background:var(--ink);color:#fff}
+.dchips{display:flex;gap:8px;margin-bottom:16px}.dchip{flex:1;border:0;background:var(--soft);border-radius:16px;padding:12px 6px;font:500 15px Rubik;color:var(--ink);transition:.25s var(--ease);position:relative}.dchip small{display:block;font-size:11.5px;color:var(--mute);font-weight:400;margin-top:2px}.dchip.on{background:var(--ink);color:#fff}.dchip.on small{color:#bbb}.dchip input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;padding:0}
+.calhd{display:flex;align-items:center;gap:12px;margin-bottom:18px}.calic{width:46px;height:50px;border-radius:12px;background:#fff;box-shadow:0 0 0 1px var(--line),0 6px 16px -8px rgba(0,0,0,.2);overflow:hidden;text-align:center;flex:none}.calic i{display:block;background:var(--acc);color:#fff;font:600 10px Rubik;font-style:normal;padding:2px 0}.calic b{font-size:20px;line-height:30px}
+.calhd h3{margin:0}.calhd p{margin:2px 0 0;color:var(--mute);font-size:14px}
+.tm{width:100%;font:600 28px Rubik!important;text-align:center;letter-spacing:1px}
+.it .ind i.cal{background:#fbefee;color:var(--acc);font-weight:500}
 </style></head><body>
 <header><h1><span class="sub">המשימות של רן</span><span id="ttl">עבודה</span></h1>
 <button class="ib" id="undoB" onclick="undo()" disabled title="בטל"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button></header>
@@ -64,6 +69,9 @@ dialog{border:0;padding:0;background:transparent;max-width:100%;max-height:100%}
 <input id="cap" type="file" accept="image/*" capture="environment" hidden onchange="addAtt(this)"><input id="upl" type="file" multiple hidden onchange="addAtt(this)">
 <button class="btn p">שמור</button><button type="button" class="btn" onclick="dlg.close()">ביטול</button></form></div></dialog>
 <dialog id="menu" class="sheet"><div><h3 id="mt"></h3><div id="mb"></div><button class="btn" onclick="menu.close()">ביטול</button></div></dialog>
+<dialog id="cal" class="sheet"><div><div class="calhd"><div class="calic"><i id="cm">OCT</i><b id="cd">16</b></div><div><h3>להוסיף ליומן?</h3><p id="cn"></p></div></div>
+<label class="fld">יום</label><div class="dchips" id="dch"></div><label class="fld">שעה</label><input type="time" id="ctime" class="tm" value="09:00">
+<button class="btn p" onclick="calSave()">הוסף</button><button class="btn" onclick="cal.close()">לא עכשיו</button></div></dialog>
 <script>
 const P=[['ran','רן'],['gen','כללי'],['work','עבודה'],['trash','זבל']],K='ran_items_v2';
 let I=JSON.parse(localStorage.getItem(K)||'null');
@@ -81,10 +89,10 @@ const toastEl=()=>document.getElementById('toast');
 // ---- render
 let curPage=2,editId=null,dragging=false;
 function card(t){const a=t.att||[],img=a.filter(x=>/^image/.test(x.type)).length,fl=a.length-img;
-return `<li class="it${/\?/.test(t.name+t.address)?' unc':''}" data-id="${t.id}"><b>${esc(t.name)}</b><div class="meta">${t.address||t.ll?`<span>${esc(t.address||'מיקום נוכחי')}</span>`:''}${t.phone?`<a href="tel:${esc(t.phone)}" onclick="event.stopPropagation()">${esc(t.phone)}</a>`:''}</div>${t.notes||img||fl||t.ll?`<div class="ind">${t.notes?'<i>📝 הערה</i>':''}${img?`<i>📷 ${img}</i>`:''}${fl?`<i>📎 ${fl}</i>`:''}${t.ll?'<i>📍</i>':''}</div>`:''}</li>`}
+return `<li class="it${/\?/.test(t.name+t.address)?' unc':''}" data-id="${t.id}"><b>${esc(t.name)}</b><div class="meta">${t.address||t.ll?`<span>${esc(t.address||'מיקום נוכחי')}</span>`:''}${t.phone?`<a href="tel:${esc(t.phone)}" onclick="event.stopPropagation()">${esc(t.phone)}</a>`:''}</div>${t.notes||img||fl||t.ll||t.when?`<div class="ind">${t.when?`<i class="cal">📅 ${fmtD(t.when.slice(0,10))} · ${t.when.slice(11)}</i>`:''}${t.notes?'<i>📝 הערה</i>':''}${img?`<i>📷 ${img}</i>`:''}${fl?`<i>📎 ${fl}</i>`:''}${t.ll?'<i>📍</i>':''}</div>`:''}</li>`}
 function draw(){const s=pages.scrollLeft;pages.innerHTML=P.map(([k])=>{const l=I.filter(t=>t.page==k);return `<section class="page"><ul class="list" data-p="${k}">${l.map(card).join('')}</ul>${l.length?'':`<div class="empty">${k=='trash'?'הזבל ריק':'אין כאן כלום עדיין'}</div>`}</section>`}).join('');pages.scrollLeft=s;
 document.querySelectorAll('.list').forEach(el=>Sortable.create(el,{group:'items',animation:250,easing:'cubic-bezier(.2,.8,.2,1)',delay:380,delayOnTouchOnly:true,touchStartThreshold:8,ghostClass:'ghost',chosenClass:'chosen',forceFallback:true,fallbackTolerance:4,
- onStart:()=>{dragging=true;H.push(JSON.stringify(I));navigator.vibrate&&navigator.vibrate(15)},onEnd:e=>{dragging=false;clearTimeout(edgeT);edgeT=null;if(e.from===e.to&&e.oldIndex===e.newIndex){H.pop();return}syncDom(e.from!==e.to?'הועבר ל'+pn(e.to.dataset.p):'הסדר עודכן')}}));
+ onStart:()=>{dragging=true;H.push(JSON.stringify(I));navigator.vibrate&&navigator.vibrate(15)},onEnd:e=>{dragging=false;clearTimeout(edgeT);edgeT=null;if(e.from===e.to&&e.oldIndex===e.newIndex){H.pop();return}syncDom(e.from!==e.to?'הועבר ל'+pn(e.to.dataset.p):'הסדר עודכן');if(e.from!==e.to&&/work|ran/.test(e.to.dataset.p)){const id=e.item.dataset.id;setTimeout(()=>askCal(id),400)}}}));
 document.querySelectorAll('.it').forEach(li=>li.onclick=()=>{if(!dragging)openMenu(li.dataset.id)});dt()}
 function syncDom(msg){const o=[];document.querySelectorAll('.list').forEach(l=>l.querySelectorAll('.it').forEach(li=>{const t=byId(li.dataset.id);if(l.dataset.p=='trash'&&t.page!='trash')t.prev=t.page;t.page=l.dataset.p;o.push(t)}));I=o;save();setTimeout(draw,0);toast(msg)}
 function dt(){const n=Math.round(Math.abs(pages.scrollLeft)/pages.clientWidth);if(!isNaN(n))curPage=n;const c=k=>I.filter(t=>t.page==k).length;
@@ -97,9 +105,9 @@ document.addEventListener('touchmove',e=>edgeCheck(e.touches[0].clientX),{passiv
 document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d)d.close()}));
 function openMenu(id){const t=byId(id);mt.textContent=t.name;let h='';
 if(t.page=='trash')h=`<button class="btn p" onclick="mvTo('${id}','${t.prev||'work'}')">שחזר ל${pn(t.prev||'work')}</button><button class="btn d" onclick="if(confirm('למחוק לצמיתות?')){menu.close();act('נמחק לצמיתות',()=>I=I.filter(x=>x.id!='${id}'))}">מחק לצמיתות</button>`;
-else h=`<button class="btn p" onclick="menu.close();edit('${id}')">פתח / ערוך</button>`+P.filter(p=>p[0]!='trash'&&p[0]!=t.page).map(([k,n])=>`<button class="btn" onclick="mvTo('${id}','${k}')">העבר ל${n}</button>`).join('')+`<button class="btn d" onclick="mvTo('${id}','trash')">העבר לזבל</button>`;
+else h=`<button class="btn p" onclick="menu.close();edit('${id}')">פתח / ערוך</button><button class="btn" onclick="menu.close();askCal('${id}')">📅 ${t.when?'שנה מועד ביומן':'הוסף ליומן'}</button>`+P.filter(p=>p[0]!='trash'&&p[0]!=t.page).map(([k,n])=>`<button class="btn" onclick="mvTo('${id}','${k}')">העבר ל${n}</button>`).join('')+`<button class="btn d" onclick="mvTo('${id}','trash')">העבר לזבל</button>`;
 mb.innerHTML=h;menu.showModal()}
-function mvTo(id,k){menu.close();act(k=='trash'?'הועבר לזבל':'הועבר ל'+pn(k),()=>{const t=byId(id);if(k=='trash')t.prev=t.page;t.page=k;I=I.filter(x=>x!==t);k=='trash'?I.unshift(t):I.push(t)})}
+function mvTo(id,k){menu.close();act(k=='trash'?'הועבר לזבל':'הועבר ל'+pn(k),()=>{const t=byId(id);if(k=='trash')t.prev=t.page;t.page=k;I=I.filter(x=>x!==t);k=='trash'?I.unshift(t):I.push(t)});if(k=='work'||k=='ran')setTimeout(()=>askCal(id),350)}
 // ---- edit sheet
 let draftAtt=[],draftLL=null;
 function edit(id){editId=id;const t=id?byId(id):{};dtt.textContent=id?'עריכה':'חדש ב'+P[Math.min(curPage,2)][1];for(const e of f.elements)if(e.name)e.value=t[e.name]||'';draftAtt=[...(t.att||[])];draftLL=t.ll||null;links();renderAtts();dlg.showModal()}
@@ -111,6 +119,15 @@ async function renderAtts(){atts.innerHTML='';for(const a of draftAtt){const d=d
 const b=await idb('get',a.id);if(b){const u=URL.createObjectURL(b);if(/^image/.test(a.type)){const im=new Image();im.src=u;d.appendChild(im)}d.onclick=()=>open(u,'_blank')}atts.appendChild(d)}}
 function saveEdit(e){e.preventDefault();const d=Object.fromEntries(new FormData(f));d.att=draftAtt;d.ll=draftLL;dlg.close();
 if(editId)act('נשמר',()=>Object.assign(byId(editId),d));else act('נוסף',()=>I.push({...d,id:'t'+Date.now(),page:P[Math.min(curPage,2)][0]}))}
+
+// ---- calendar (visual mock)
+let calId=null,calDate=null;const iso=d=>d.toISOString().slice(0,10),HM=['ינו','פבר','מרץ','אפר','מאי','יונ','יול','אוג','ספט','אוק','נוב','דצמ'];
+const fmtD=s=>{const d=new Date(s+'T00:00'),t=new Date();t.setHours(0,0,0,0);const df=(d-t)/864e5;return df==0?'היום':df==1?'מחר':d.getDate()+' '+HM[d.getMonth()]};
+function askCal(id){const t=byId(id);if(!t)return;calId=id;cn.textContent=t.name;const now=new Date(),tm=new Date(now.getTime()+864e5);
+calDate=t.when?t.when.slice(0,10):iso(now);ctime.value=t.when?t.when.slice(11,16):'09:00';
+const ch=()=>{const custom=calDate!=iso(now)&&calDate!=iso(tm);dch.innerHTML=`<button class="dchip${calDate==iso(now)?' on':''}" data-d="${iso(now)}">היום<small>${now.getDate()} ${HM[now.getMonth()]}</small></button><button class="dchip${calDate==iso(tm)?' on':''}" data-d="${iso(tm)}">מחר<small>${tm.getDate()} ${HM[tm.getMonth()]}</small></button><label class="dchip${custom?' on':''}">${custom?fmtD(calDate):'בחר תאריך'}<small>${custom?'שנה':'📅'}</small><input type="date" id="cpick" value="${calDate}"></label>`;
+dch.querySelectorAll('button').forEach(b=>b.onclick=()=>{calDate=b.dataset.d;ch()});cpick.onchange=()=>{if(cpick.value){calDate=cpick.value;ch()}};const d=new Date(calDate+'T00:00');cm.textContent=HM[d.getMonth()];cd.textContent=d.getDate()};ch();cal.showModal()}
+function calSave(){const w=calDate+'T'+(ctime.value||'09:00'),id=calId;cal.close();act('נוסף ל-Google Calendar ✓ (הדגמה) · '+fmtD(calDate)+' '+w.slice(11),()=>byId(id).when=w)}
 // ---- install prompt (once)
 let dp;const standalone=matchMedia('(display-mode: fullscreen),(display-mode: standalone)').matches||navigator.standalone;
 function instDone(){inst.style.display='none';localStorage.instShown=1}

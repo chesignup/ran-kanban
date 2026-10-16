@@ -1,64 +1,82 @@
-<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#b91c1c"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="icon.png"><title>המשימות של רן – קריסי</title>
+<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#b91c1c"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><link rel="apple-touch-icon" href="icon.png">
+<title>המשימות של רן</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/sortablejs@1.15.2/Sortable.min.js"></script>
 <style>
-body{margin:0;font-family:system-ui,Arial;background:#f3f4f6}header{background:#b91c1c;color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
-h1{font-size:18px;margin:0}nav{display:flex;background:#fff;border-bottom:1px solid #ddd}nav button{flex:1;padding:10px;border:0;background:none;font-size:15px}nav .on{border-bottom:3px solid #b91c1c;font-weight:bold}
-#cam{display:block;margin:12px;padding:16px;width:calc(100% - 24px);font-size:18px;background:#111;color:#fff;border:0;border-radius:12px}
-html,body{height:100%;overscroll-behavior:none}.cols{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;height:calc(100vh - 190px)}.cols::-webkit-scrollbar{display:none}.col{flex:0 0 100%;box-sizing:border-box;padding:8px 12px;scroll-snap-align:center;scroll-snap-stop:always;overflow-y:auto}#dots{text-align:center;padding:6px}#dots i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#bbb;margin:0 4px;transition:.2s}#dots i.on{background:#b91c1c;transform:scale(1.4)}
-.col h2{font-size:16px;margin:4px}.card{background:#fff;border-radius:8px;padding:8px;margin:6px 0;box-shadow:0 1px 2px #0002}.card b{display:block}.card small{color:#555;display:block}
-.tag{font-size:11px;background:#fee2e2;padding:1px 6px;border-radius:8px}.unc{color:#b45309}.acts button{margin:4px 2px 0 0;font-size:13px}
-#map{height:60vh}.hide{display:none}dialog{width:90%;border-radius:12px}input,select,textarea{width:100%;box-sizing:border-box;margin:3px 0 8px;padding:8px;font-size:15px}
-.rv{border:1px solid #ccc;border-radius:8px;padding:6px;margin:6px 0}.pad{padding:10px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:#f2f2f7;color:#111}
+header{background:#b91c1c;color:#fff;padding:calc(env(safe-area-inset-top) + 10px) 16px 8px;display:flex;align-items:center;gap:10px}
+header h1{flex:1;font-size:22px;margin:0;font-weight:700}
+.ib{border:0;background:rgba(255,255,255,.18);color:#fff;width:40px;height:40px;border-radius:50%;font-size:19px}
+#tabs{display:flex;background:#b91c1c;padding:0 8px 8px}#tabs button{flex:1;border:0;background:none;color:#fecaca;font-size:15px;padding:6px;border-radius:16px}#tabs button.on{background:#fff;color:#b91c1c;font-weight:700}
+#pages{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;height:calc(100% - 150px)}#pages::-webkit-scrollbar{display:none}
+.page{flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;overflow-y:auto;padding:12px 12px 90px}
+.list{min-height:60vh;list-style:none;margin:0;padding:0}
+.it{background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.08);display:flex;gap:10px;align-items:center;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.it .tx{flex:1;min-width:0}.it b{display:block;font-size:16px}.it small{display:block;color:#666;font-size:13px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it a{color:#b91c1c;text-decoration:none}.dots3{border:0;background:none;font-size:20px;color:#999;padding:4px 6px}
+.unc b{color:#b45309}.ghost{opacity:.3}.chosen{box-shadow:0 10px 25px rgba(0,0,0,.25);transform:scale(1.03)}
+.empty{color:#aaa;text-align:center;margin-top:40px}
+#dots{position:fixed;bottom:calc(env(safe-area-inset-bottom) + 18px);right:0;left:0;text-align:center;pointer-events:none}
+#dots i{pointer-events:auto;display:inline-block;width:8px;height:8px;border-radius:50%;background:#bbb;margin:0 5px;transition:.2s}#dots i.on{background:#b91c1c;transform:scale(1.4)}
+#fab{position:fixed;left:18px;bottom:calc(env(safe-area-inset-bottom) + 50px);width:58px;height:58px;border-radius:50%;border:0;background:#b91c1c;color:#fff;font-size:30px;box-shadow:0 4px 12px rgba(0,0,0,.3)}
+#edgeL,#edgeR{position:fixed;top:150px;bottom:0;width:26px;background:linear-gradient(90deg,rgba(185,28,28,.25),transparent);display:none;z-index:5}#edgeL{left:0}#edgeR{right:0;transform:scaleX(-1)}
+.sheet{border:0;border-radius:18px 18px 0 0;width:100%;max-width:100%;margin:auto 0 0;padding:16px 16px calc(env(safe-area-inset-bottom) + 16px)}.sheet::backdrop{background:rgba(0,0,0,.35)}
+.sheet h3{margin:0 0 10px}.sheet input{width:100%;padding:12px;font-size:16px;border:1px solid #ddd;border-radius:10px;margin-bottom:10px}
+.sheet .btn{display:block;width:100%;padding:13px;font-size:16px;border:0;border-radius:12px;margin-top:8px;background:#f2f2f7}.btn.p{background:#b91c1c;color:#fff}.btn.d{color:#dc2626}
+#mapv{position:fixed;inset:0;background:#fff;z-index:20;display:none;flex-direction:column}#map{flex:1}#mapv .bar{padding:calc(env(safe-area-inset-top) + 8px) 10px 8px;display:flex;gap:6px}#mapv input{flex:1;padding:10px;border:1px solid #ddd;border-radius:10px}
+#rl{max-height:30vh;overflow:auto;padding:0 12px}.rv{border:1px solid #eee;border-radius:12px;padding:8px;margin-bottom:8px}
 </style></head><body>
-<header><h1>📋 המשימות של רן</h1><button onclick="edit()">➕ משימה</button></header>
-<nav><button id="tb" class="on" onclick="tab('b')">לוח</button><button id="tm" onclick="tab('m')">מפה ומסלול</button></nav>
-<div id="vb"><button id="cam" onclick="fi.click()">📷 צלם דף משימות</button><input id="fi" type="file" accept="image/*" capture="environment" class="hide" onchange="ocr(this.files[0])">
-<div id="dots"></div><div class="cols" id="cols" onscroll="dt()"></div></div>
-<div id="vm" class="hide"><div class="pad"><input id="start" placeholder="נקודת התחלה (למשל: החשמונאים 9, בני ברק)" value="החשמונאים 9, בני ברק"><button onclick="route()">🧭 סדר מסלול</button> <span id="st"></span></div><div id="map"></div><div class="pad" id="rl"></div></div>
-<dialog id="dlg"><form method="dialog" id="f"><input name="title" placeholder="משימה" required><select name="type"><option>מדידה</option><option>התקנה</option><option>הצעת מחיר</option><option>בית/סידורים</option><option>אחר</option></select>
-<input name="address" placeholder="כתובת"><input name="city" placeholder="עיר" value="בני ברק"><input name="phone" placeholder="טלפון" type="tel"><textarea name="notes" placeholder="הערות"></textarea>
-<button value="ok">שמור</button> <button value="x" formnovalidate>ביטול</button></form></dialog>
-<dialog id="rev"><h3>משימות שזוהו מהדף</h3><div id="rvl"></div><button onclick="acceptRev()">✅ הוסף ל"מתוכנן"</button> <button onclick="rev.close()">ביטול</button></dialog>
+<header><h1>המשימות של רן</h1><button class="ib" onclick="fi.click()" title="צלם דף">📷</button><button class="ib" onclick="openMap()" title="מפה">🗺</button></header>
+<div id="tabs"></div>
+<div id="pages" onscroll="dt()"></div>
+<div id="dots"></div><div id="edgeL"></div><div id="edgeR"></div>
+<button id="fab" onclick="edit()">+</button>
+<input id="fi" type="file" accept="image/*" capture="environment" hidden onchange="ocr(this.files[0])">
+<dialog id="dlg" class="sheet"><form method="dialog" id="f"><h3 id="dt">פריט</h3><input name="name" placeholder="שם" required><input name="address" placeholder="כתובת (רחוב, עיר)"><input name="phone" placeholder="טלפון" type="tel" inputmode="tel"><button class="btn p" value="ok">שמור</button><button class="btn" value="x" formnovalidate>ביטול</button></form></dialog>
+<dialog id="menu" class="sheet"><h3 id="mt"></h3><div id="mb"></div><button class="btn" onclick="menu.close()">ביטול</button></dialog>
+<dialog id="rev" class="sheet"><h3>זוהה מהדף (הדגמה)</h3><div id="rvl" style="max-height:55vh;overflow:auto"></div><button class="btn p" onclick="acceptRev()">הוסף לעבודה</button><button class="btn" onclick="rev.close()">ביטול</button></dialog>
+<div id="mapv"><div class="bar"><button class="btn" style="width:auto;margin:0" onclick="mapv.style.display='none'">✕</button><input id="start" value="החשמונאים 9, בני ברק"><button class="btn p" style="width:auto;margin:0" onclick="route()">סדר מסלול</button></div><div id="map"></div><div id="rl"></div></div>
 <script>
-const COLS=[['todo','מתוכנן'],['doing','בביצוע'],['done','הסתיים']];
-// ניתן להגדיר שרת OCR: localStorage.ocrEndpoint = 'https://.../ocr' (POST image -> JSON [{title,type,address,city,phone,notes}])
-const SEED=[
-["שוקי קרני – הצעת מחיר","הצעת מחיר","","","",""],
-["אלי אלפא – חשמל?","אחר","","","","קריאה לא ודאית"],
-["ויטל – הרצוג?","מדידה","הרצוג?","","",""],
-["איתי (שמריהו?)","אחר","","","",""],
-["רוזן?","אחר","","","054-5413230","טלפון מהדף – לבדוק ספרות"],
-["ראובן – חרמון?","אחר","חרמון?","","",""],
-["רבי עקיבא – אגף/צד?","התקנה","רבי עקיבא?","בני ברק","",""],
-["אלחנן? – כיור/אמבטיה?","מדידה","","","052-4299120","קריאה לא ודאית"],
-["הוד האוצמן?","אחר","","","",""],
-["רשימת בית: דבק, ויטה?, רישום, אבא, כנפה?","בית/סידורים","","","","עמוד 2, צד שמאל"],
-["מראה 99×77? – 3300 ₪","הצעת מחיר","רבי ... ?","","052-2301248","עמוד 3: מחיר 3300, מידה 77×99?, '24 ימים?'"],
-["רשימת שמות עמוד 1 (≈30 שורות)","אחר","","","","כתב יד קשה מאוד – רמת גן?, גבעת שמואל?, B.S.T – לתמלל עם רן"]
-].map((a,i)=>({id:'s'+i,title:a[0],type:a[1],address:a[2],city:a[3],phone:a[4],notes:a[5],status:'todo'}));
-let T=JSON.parse(localStorage.tasks||'null')||SEED, cur=null, pend=[], map, lay;
-const save=()=>{localStorage.tasks=JSON.stringify(T);draw()};
-function draw(){cols.innerHTML=COLS.map(([k,n])=>`<div class="col" ondragover="event.preventDefault()" ondrop="mv(event.dataTransfer.getData('t'),'${k}')"><h2>${n} (${T.filter(t=>t.status==k).length})</h2>${T.filter(t=>t.status==k).map(card).join('')}</div>`).join('')}
-function card(t){const i=COLS.findIndex(c=>c[0]==t.status),u=/\?/.test(t.title+t.address)?' unc':'';return `<div class="card" draggable="true" ondragstart="event.dataTransfer.setData('t','${t.id}')"><b class="${u}">${t.title}</b><span class="tag">${t.type}</span><small>📍 ${[t.address,t.city].filter(Boolean).join(', ')||'—'}</small>${t.phone?`<small>📞 <a href="tel:${t.phone}">${t.phone}</a></small>`:''}${t.notes?`<small>${t.notes}</small>`:''}<div class="acts">${i>0?`<button onclick="mv('${t.id}','${COLS[i-1][0]}')">→</button>`:''}${i<2?`<button onclick="mv('${t.id}','${COLS[i+1][0]}')">${COLS[i+1][1]} ←</button>`:''}<button onclick="edit('${t.id}')">✏️</button><button onclick="if(confirm('למחוק?')){T=T.filter(x=>x.id!='${t.id}');save()}">🗑</button></div></div>`}
-function mv(id,s){T.find(t=>t.id==id).status=s;save()}
-function edit(id){cur=id;const t=T.find(x=>x.id==id)||{};for(const e of f.elements)if(e.name)e.value=t[e.name]||(e.name=='city'&&!id?'בני ברק':'');dlg.showModal()}
-dlg.onclose=()=>{if(dlg.returnValue!='ok')return;const d=Object.fromEntries(new FormData(f));if(cur)Object.assign(T.find(t=>t.id==cur),d,{lat:null});else T.push({...d,id:'t'+Date.now(),status:'todo'});save()};
-async function ocr(file){if(!file)return;let r;try{if(localStorage.ocrEndpoint){const fd=new FormData();fd.append('image',file);r=await (await fetch(localStorage.ocrEndpoint,{method:'POST',body:fd})).json()}}catch(e){alert('שגיאת OCR')}
-if(!r){alert('הדגמה: זיהוי כתב יד עדיין לא מחובר – מוצגות משימות לדוגמה');r=[{title:'מדידת מראה – אמבטיה',type:'מדידה',address:'רבי עקיבא 50',city:'בני ברק',phone:'',notes:''},{title:'הצעת מחיר מקלחון',type:'הצעת מחיר',address:'ז׳בוטינסקי 100',city:'רמת גן',phone:'',notes:''}]}
-pend=r;rvl.innerHTML=r.map((t,i)=>`<div class="rv">${['title','address','city','phone'].map(k=>`<input data-i="${i}" data-k="${k}" value="${t[k]||''}" placeholder="${k}">`).join('')}</div>`).join('');rev.showModal();fi.value=''}
-function acceptRev(){rvl.querySelectorAll('input').forEach(e=>pend[e.dataset.i][e.dataset.k]=e.value);pend.forEach((t,i)=>T.push({type:'אחר',notes:'',...t,id:'o'+Date.now()+i,status:'todo'}));rev.close();save()}
-function tab(v){vb.classList.toggle('hide',v!='b');vm.classList.toggle('hide',v!='m');tb.className=v=='b'?'on':'';tm.className=v=='m'?'on':'';if(v=='m')showMap()}
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-async function geo(q){const c=JSON.parse(localStorage.gc||'{}');if(q in c)return c[q];await sleep(1100);const j=await (await fetch('https://nominatim.openstreetmap.org/search?format=json&countrycodes=il&limit=1&q='+encodeURIComponent(q))).json();c[q]=j[0]?[+j[0].lat,+j[0].lon]:null;localStorage.gc=JSON.stringify(c);return c[q]}
-async function showMap(){if(!map){map=L.map('map').setView([32.085,34.835],12);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'}).addTo(map);lay=L.layerGroup().addTo(map)}setTimeout(()=>map.invalidateSize(),50);lay.clearLayers();
-for(const t of T.filter(t=>t.status!='done'&&t.address)){const p=await geo(t.address+', '+(t.city||'')+', ישראל');t.lat=p;if(p)L.marker(p).bindPopup(t.title).addTo(lay)}}
+const P=[['ran','רן'],['gen','כללי'],['work','עבודה'],['trash','זבל']],K='ran_items_v2';
+let I=JSON.parse(localStorage.getItem(K)||'null');
+if(!I){const old=JSON.parse(localStorage.tasks||'null')||SEEDOLD();I=old.map((t,n)=>({id:t.id||('m'+n),name:t.title||t.name,address:[t.address,t.city].filter(Boolean).join(', '),phone:t.phone||'',page:/בית/.test(t.type)?'gen':'work'}));localStorage.setItem(K,JSON.stringify(I))}
+function SEEDOLD(){return[["שוקי קרני – הצעת מחיר"],["אלי אלפא – חשמל?"],["ויטל – הרצוג?","","הרצוג?"],["איתי (שמריהו?)"],["רוזן?","","","054-5413230"],["ראובן – חרמון?","","חרמון?"],["רבי עקיבא – ?","","רבי עקיבא, בני ברק"],["אלחנן? – כיור/אמבטיה?","","","052-4299120"],["הוד האוצמן?"],["סידורים: דבק, ויטה?, רישום, אבא, כנפה?","בית"],["מראה 99×77? – 3300 ₪","","","052-2301248"],["עמוד 1 – כ-30 שורות לתמלל עם רן"]].map((a,i)=>({id:'s'+i,title:a[0],type:a[1]||'',address:a[2]||'',phone:a[3]||''}))}
+const save=()=>localStorage.setItem(K,JSON.stringify(I)),byId=id=>I.find(x=>x.id==id),esc=s=>(s||'').replace(/[&<>"]/g,c=>'&#'+c.charCodeAt(0)+';');
+let curPage=0,editId=null,pend=[],dragging=false;
+function row(t){return `<li class="it${/\?/.test(t.name+t.address)?' unc':''}" data-id="${t.id}"><div class="tx"><b>${esc(t.name)}</b>${t.address?`<small>📍 ${esc(t.address)}</small>`:''}${t.phone?`<small>📞 <a href="tel:${esc(t.phone)}">${esc(t.phone)}</a></small>`:''}</div><button class="dots3" onclick="openMenu('${t.id}')">⋮</button></li>`}
+function draw(){const s=pages.scrollLeft;pages.innerHTML=P.map(([k,n])=>{const l=I.filter(t=>t.page==k);return `<section class="page"><ul class="list" data-p="${k}">${l.map(row).join('')}</ul>${l.length?'':`<div class="empty">${k=='trash'?'הזבל ריק':'אין פריטים. לחץ + להוספה'}</div>`}</section>`}).join('');pages.scrollLeft=s;
+document.querySelectorAll('.list').forEach(el=>Sortable.create(el,{group:'items',animation:220,delay:350,delayOnTouchOnly:true,touchStartThreshold:6,ghostClass:'ghost',chosenClass:'chosen',fallbackTolerance:3,forceFallback:true,
+ onStart:()=>{dragging=true;edgeL.style.display=edgeR.style.display='block'},onEnd:()=>{dragging=false;edgeL.style.display=edgeR.style.display='none';syncDom()}}));dt()}
+function syncDom(){const o=[];document.querySelectorAll('.list').forEach(l=>l.querySelectorAll('.it').forEach(li=>{const t=byId(li.dataset.id);t.page=l.dataset.p;o.push(t)}));I=o;save();setTimeout(draw,0)}
+function dt(){curPage=Math.round(Math.abs(pages.scrollLeft)/pages.clientWidth);const c=k=>I.filter(t=>t.page==k).length;
+dots.innerHTML=P.map((p,j)=>`<i class="${j==curPage?'on':''}" onclick="go(${j})"></i>`).join('');tabs.innerHTML=P.map(([k,n],j)=>`<button class="${j==curPage?'on':''}" onclick="go(${j})">${n} ${c(k)}</button>`).join('');fab.style.display=curPage==3?'none':''}
+function go(j,inst){pages.children[j]&&pages.children[j].scrollIntoView({behavior:inst?'auto':'smooth',inline:'center',block:'nearest'})}
+// side-drag: hold item near screen edge -> flip page (RTL: right edge = previous page)
+let edgeT=null;document.addEventListener('touchmove',e=>edgeCheck(e.touches[0].clientX),{passive:true});document.addEventListener('pointermove',e=>dragging&&edgeCheck(e.clientX));
+function edgeCheck(x){if(!dragging)return;const w=innerWidth,d=x>w-40?-1:x<40?1:0;if(!d){clearTimeout(edgeT);edgeT=null;return}if(edgeT)return;edgeT=setTimeout(()=>{edgeT=null;const n=curPage+d;if(n>=0&&n<P.length){go(n,1);curPage=n}},450)}
+function openMenu(id){const t=byId(id);mt.textContent=t.name;let h='';
+if(t.page=='trash')h=`<button class="btn p" onclick="mvTo('${id}','${t.prev||'work'}')">↩ שחזר ל${P.find(p=>p[0]==(t.prev||'work'))[1]}</button><button class="btn d" onclick="if(confirm('למחוק לצמיתות?')){I=I.filter(x=>x.id!='${id}');save();menu.close();draw()}">מחק לצמיתות</button>`;
+else h=`<button class="btn" onclick="menu.close();edit('${id}')">✏️ עריכה</button>`+P.filter(p=>p[0]!='trash'&&p[0]!=t.page).map(([k,n])=>`<button class="btn" onclick="mvTo('${id}','${k}')">העבר ל${n}</button>`).join('')+`<button class="btn d" onclick="mvTo('${id}','trash')">🗑 העבר לזבל</button>`;
+mb.innerHTML=h;menu.showModal()}
+function mvTo(id,k){const t=byId(id);if(k=='trash')t.prev=t.page;t.page=k;I=I.filter(x=>x!==t);k=='trash'?I.unshift(t):I.push(t);save();menu.close();draw()}
+function edit(id){editId=id;const t=id?byId(id):{};dt_.textContent=id?'עריכה':'פריט חדש ב'+P[curPage][1];for(const e of f.elements)if(e.name)e.value=t[e.name]||'';dlg.showModal()}
+const dt_=document.getElementById('dt');
+dlg.onclose=()=>{if(dlg.returnValue!='ok')return;const d=Object.fromEntries(new FormData(f));if(editId)Object.assign(byId(editId),d);else I.push({...d,id:'t'+Date.now(),page:P[Math.min(curPage,2)][0]});save();draw()};
+async function ocr(file){if(!file)return;let r;try{if(localStorage.ocrEndpoint){const fd=new FormData();fd.append('image',file);r=await(await fetch(localStorage.ocrEndpoint,{method:'POST',body:fd})).json()}}catch(e){}
+if(!r)r=[{name:'מדידת מראה – אמבטיה (דוגמה)',address:'רבי עקיבא 50, בני ברק',phone:''},{name:'הצעת מחיר מקלחון (דוגמה)',address:'ז׳בוטינסקי 100, רמת גן',phone:''}];
+pend=r;rvl.innerHTML=r.map((t,i)=>`<div class="rv">${['name','address','phone'].map(k=>`<input data-i="${i}" data-k="${k}" value="${esc(t[k])}" placeholder="${{name:'שם',address:'כתובת',phone:'טלפון'}[k]}">`).join('')}</div>`).join('');rev.showModal();fi.value=''}
+function acceptRev(){rvl.querySelectorAll('input').forEach(e=>pend[e.dataset.i][e.dataset.k]=e.value);pend.forEach((t,i)=>I.push({...t,id:'o'+Date.now()+i,page:'work'}));save();rev.close();draw();go(2)}
+let map,lay;const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+async function geo(q){const c=JSON.parse(localStorage.gc||'{}');if(q in c)return c[q];await sleep(1100);try{const j=await(await fetch('https://nominatim.openstreetmap.org/search?format=json&countrycodes=il&limit=1&q='+encodeURIComponent(q))).json();c[q]=j[0]?[+j[0].lat,+j[0].lon]:null}catch(e){return null}localStorage.gc=JSON.stringify(c);return c[q]}
+async function openMap(){mapv.style.display='flex';if(!map){map=L.map('map').setView([32.085,34.835],12);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'}).addTo(map);lay=L.layerGroup().addTo(map)}setTimeout(()=>map.invalidateSize(),50);lay.clearLayers();
+for(const t of I.filter(t=>t.page!='trash'&&t.address)){t.ll=await geo(t.address+', ישראל');if(t.ll)L.marker(t.ll).bindPopup(esc(t.name)).addTo(lay)}}
 const dist=(a,b)=>Math.hypot(a[0]-b[0],(a[1]-b[1])*Math.cos(a[0]*Math.PI/180));
-async function route(){st.textContent='מחשב...';await showMap();let s=await geo(start.value);if(!s){st.textContent='כתובת התחלה לא נמצאה';return}
-let left=T.filter(t=>t.status!='done'&&t.lat),o=[],p=s;while(left.length){left.sort((a,b)=>dist(p,a.lat)-dist(p,b.lat));const n=left.shift();o.push(n);p=n.lat}
-st.textContent='';const g='https://www.google.com/maps/dir/'+[s,...o.map(t=>t.lat)].map(x=>x.join(',')).join('/');
-rl.innerHTML=`<ol>${o.map(t=>`<li>${t.title} – ${t.address} <a href="https://waze.com/ul?ll=${t.lat.join(',')}&navigate=yes">Waze</a></li>`).join('')}</ol><a href="${g}" target="_blank">🗺 פתח מסלול מלא ב-Google Maps</a>`;L.polyline([s,...o.map(t=>t.lat)],{color:'red'}).addTo(lay)}
-function dt(){const i=Math.round(Math.abs(cols.scrollLeft)/cols.clientWidth);dots.innerHTML=COLS.map((c,j)=>`<i class="${j==i?'on':''}" onclick="cols.children[${j}].scrollIntoView({behavior:'smooth',inline:'center'})"></i>`).join('')}
-const _d=draw;draw=()=>{const s=cols.scrollLeft;_d();cols.scrollLeft=s;dt()};
-draw();if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
+async function route(){rl.textContent='מחשב...';await openMap();const s=await geo(start.value);if(!s){rl.textContent='כתובת התחלה לא נמצאה';return}
+let left=I.filter(t=>t.page!='trash'&&t.ll),o=[],p=s;while(left.length){left.sort((a,b)=>dist(p,a.ll)-dist(p,b.ll));const n=left.shift();o.push(n);p=n.ll}
+const g='https://www.google.com/maps/dir/'+[s,...o.map(t=>t.ll)].map(x=>x.join(',')).join('/');
+rl.innerHTML=`<ol>${o.map(t=>`<li>${esc(t.name)} <a href="https://waze.com/ul?ll=${t.ll.join(',')}&navigate=yes">Waze</a></li>`).join('')}</ol><a class="btn p" style="text-align:center;text-decoration:none" href="${g}" target="_blank">פתח מסלול ב-Google Maps</a>`;L.polyline([s,...o.map(t=>t.ll)],{color:'#b91c1c'}).addTo(lay)}
+draw();go(2,1);if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
 </script></body></html>

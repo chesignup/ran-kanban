@@ -64,6 +64,7 @@ dialog{border:0;padding:0;background:transparent;max-width:100%;max-height:100%}
 .mi{flex:none;width:32px;height:32px;border-radius:50%;border:0;background:var(--soft);font:600 12px Rubik;color:var(--ink);display:grid;place-items:center;text-decoration:none}
 .ln.at .atts{flex:1;margin:0;gap:6px;padding:6px 0;flex-wrap:nowrap;overflow-x:auto}.ln.at .att{width:40px;height:40px;border-radius:10px;flex:none;font-size:8px}.ln.at .att button{width:16px;height:16px;font-size:9px;top:1px;left:1px}
 #dbox{transition:transform .45s cubic-bezier(.34,1.4,.64,1)}
+#toast.quick{transition:opacity .18s ease-out,transform .18s ease-out}
 </style></head><body>
 <header><h1><span class="sub">המשימות של רן</span><span id="ttl">עבודה</span></h1>
 <button class="ib" id="undoB" onclick="undo()" disabled title="בטל"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button></header>
@@ -94,7 +95,7 @@ const idb=(m,...a)=>dbp.then(db=>new Promise((r,j)=>{const q=db.transaction('f',
 // ---- history / undo
 const H=[];function act(label,fn){H.push(JSON.stringify(I));if(H.length>60)H.shift();fn();save();draw();toast(label)}
 function undo(){if(!H.length)return;I=JSON.parse(H.pop());save();draw();toast('בוטל',1)}
-let tT;function toast(s,noUndo){tmsg.textContent=s;toastEl().querySelector('button').style.display=noUndo||!H.length?'none':'';toastEl().classList.add('on');clearTimeout(tT);tT=setTimeout(()=>toastEl().classList.remove('on'),4000)}
+let tT;function toast(s,noUndo){tmsg.textContent=s;toastEl().querySelector('button').style.display=noUndo||!H.length?'none':'';toastEl().classList.add('on');clearTimeout(tT);const el=toastEl();el.classList.toggle('quick',s=='נשמר');tT=setTimeout(()=>el.classList.remove('on'),s=='נשמר'?1500:3000)}
 const toastEl=()=>document.getElementById('toast');
 // ---- render
 let curPage=2,editId=null,dragging=false;

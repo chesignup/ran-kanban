@@ -1,11 +1,11 @@
 <!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>המשימות של רן – קריסי</title>
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#b91c1c"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="icon.png"><title>המשימות של רן – קריסי</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 body{margin:0;font-family:system-ui,Arial;background:#f3f4f6}header{background:#b91c1c;color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center}
 h1{font-size:18px;margin:0}nav{display:flex;background:#fff;border-bottom:1px solid #ddd}nav button{flex:1;padding:10px;border:0;background:none;font-size:15px}nav .on{border-bottom:3px solid #b91c1c;font-weight:bold}
 #cam{display:block;margin:12px;padding:16px;width:calc(100% - 24px);font-size:18px;background:#111;color:#fff;border:0;border-radius:12px}
-.cols{display:flex;gap:8px;overflow-x:auto;padding:8px;scroll-snap-type:x mandatory}.col{min-width:85%;background:#e5e7eb;border-radius:10px;padding:8px;scroll-snap-align:start;min-height:300px}
+html,body{height:100%;overscroll-behavior:none}.cols{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;height:calc(100vh - 190px)}.cols::-webkit-scrollbar{display:none}.col{flex:0 0 100%;box-sizing:border-box;padding:8px 12px;scroll-snap-align:center;scroll-snap-stop:always;overflow-y:auto}#dots{text-align:center;padding:6px}#dots i{display:inline-block;width:8px;height:8px;border-radius:50%;background:#bbb;margin:0 4px;transition:.2s}#dots i.on{background:#b91c1c;transform:scale(1.4)}
 .col h2{font-size:16px;margin:4px}.card{background:#fff;border-radius:8px;padding:8px;margin:6px 0;box-shadow:0 1px 2px #0002}.card b{display:block}.card small{color:#555;display:block}
 .tag{font-size:11px;background:#fee2e2;padding:1px 6px;border-radius:8px}.unc{color:#b45309}.acts button{margin:4px 2px 0 0;font-size:13px}
 #map{height:60vh}.hide{display:none}dialog{width:90%;border-radius:12px}input,select,textarea{width:100%;box-sizing:border-box;margin:3px 0 8px;padding:8px;font-size:15px}
@@ -14,7 +14,7 @@ h1{font-size:18px;margin:0}nav{display:flex;background:#fff;border-bottom:1px so
 <header><h1>📋 המשימות של רן</h1><button onclick="edit()">➕ משימה</button></header>
 <nav><button id="tb" class="on" onclick="tab('b')">לוח</button><button id="tm" onclick="tab('m')">מפה ומסלול</button></nav>
 <div id="vb"><button id="cam" onclick="fi.click()">📷 צלם דף משימות</button><input id="fi" type="file" accept="image/*" capture="environment" class="hide" onchange="ocr(this.files[0])">
-<div class="cols" id="cols"></div></div>
+<div id="dots"></div><div class="cols" id="cols" onscroll="dt()"></div></div>
 <div id="vm" class="hide"><div class="pad"><input id="start" placeholder="נקודת התחלה (למשל: החשמונאים 9, בני ברק)" value="החשמונאים 9, בני ברק"><button onclick="route()">🧭 סדר מסלול</button> <span id="st"></span></div><div id="map"></div><div class="pad" id="rl"></div></div>
 <dialog id="dlg"><form method="dialog" id="f"><input name="title" placeholder="משימה" required><select name="type"><option>מדידה</option><option>התקנה</option><option>הצעת מחיר</option><option>בית/סידורים</option><option>אחר</option></select>
 <input name="address" placeholder="כתובת"><input name="city" placeholder="עיר" value="בני ברק"><input name="phone" placeholder="טלפון" type="tel"><textarea name="notes" placeholder="הערות"></textarea>
@@ -58,5 +58,7 @@ async function route(){st.textContent='מחשב...';await showMap();let s=await 
 let left=T.filter(t=>t.status!='done'&&t.lat),o=[],p=s;while(left.length){left.sort((a,b)=>dist(p,a.lat)-dist(p,b.lat));const n=left.shift();o.push(n);p=n.lat}
 st.textContent='';const g='https://www.google.com/maps/dir/'+[s,...o.map(t=>t.lat)].map(x=>x.join(',')).join('/');
 rl.innerHTML=`<ol>${o.map(t=>`<li>${t.title} – ${t.address} <a href="https://waze.com/ul?ll=${t.lat.join(',')}&navigate=yes">Waze</a></li>`).join('')}</ol><a href="${g}" target="_blank">🗺 פתח מסלול מלא ב-Google Maps</a>`;L.polyline([s,...o.map(t=>t.lat)],{color:'red'}).addTo(lay)}
-draw();
+function dt(){const i=Math.round(Math.abs(cols.scrollLeft)/cols.clientWidth);dots.innerHTML=COLS.map((c,j)=>`<i class="${j==i?'on':''}" onclick="cols.children[${j}].scrollIntoView({behavior:'smooth',inline:'center'})"></i>`).join('')}
+const _d=draw;draw=()=>{const s=cols.scrollLeft;_d();cols.scrollLeft=s;dt()};
+draw();if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
 </script></body></html>

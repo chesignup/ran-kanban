@@ -1,6 +1,6 @@
 # המשימות של רן
 
-Web: open `index.html` (PWA). Android: Capacitor app `il.co.karisi.ran`.
+Android: Capacitor app `il.co.karisi.ran` (APK via GitHub Releases). The web/PWA version was retired on 2026-10-17; an archive is in `web-archive/`. Root `index.html` is the APK web source.
 
 ## Build
 ```

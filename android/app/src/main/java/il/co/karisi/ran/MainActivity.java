@@ -8,6 +8,13 @@ import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
   @Override public void onCreate(Bundle b) { super.onCreate(b); immersive(); }
+  @Override public void onPause() {
+    try {
+      if (getBridge() != null && getBridge().getWebView() != null)
+        getBridge().getWebView().evaluateJavascript("window.__rkFlush&&window.__rkFlush()", null);
+    } catch (Throwable ignored) {}
+    super.onPause();
+  }
   @Override public void onWindowFocusChanged(boolean f) { super.onWindowFocusChanged(f); if (f) immersive(); }
   private void immersive() {
     WindowCompat.setDecorFitsSystemWindows(getWindow(), false);

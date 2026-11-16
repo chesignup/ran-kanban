@@ -112,7 +112,7 @@ html{font-size:calc(16px * var(--z,1));touch-action:pan-x pan-y}
 <script>
 const P=[['ran','רן'],['gen','כללי'],['work','עבודה'],['trash','זבל']],K='ran_items_v2';
 // ===== config =====
-const APP_VER='0.1.6',SUPPORT_EMAIL='ran-tasks@mail.grokbot.com';
+const APP_VER='0.1.7',SUPPORT_EMAIL='ran-tasks@mail.grokbot.com';
 const GOOGLE_WEB_CLIENT_ID='155487724170-kv6v01qub9h8f1seolq5v2dqhjench45.apps.googleusercontent.com'; // Web OAuth client (project ran-tasks)
 const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.appdata';
 const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()),PL=(window.Capacitor&&Capacitor.Plugins)||{};
@@ -204,6 +204,67 @@ function decideFlush(trusted, itemsLen, tombsLen, opaqueNonEmpty){
   return 'write';
 }
 // </persist-pure>
+// <photo-pure>
+// Sheet dismiss vs Android permission/camera pauses, and activity-restore photo attach.
+function shouldHoldSheet(flags){
+  if(!flags)return false;
+  return !!(flags.hidden||flags.paused||flags.capture||flags.perm||flags.suspend);
+}
+function onDialogCancel(flags){return shouldHoldSheet(flags)?'prevent':'allow'}
+function onDialogClose(flags){return shouldHoldSheet(flags)?'ignore':'proceed'}
+function parsePhotoSession(raw){
+  try{
+    const o=typeof raw==='string'?JSON.parse(raw):raw;
+    if(!o||o.taskId==null||o.taskId==='')return null;
+    const att=Array.isArray(o.att)?o.att.filter(a=>a&&a.id!=null).map(a=>({id:a.id,name:a.name||'',type:a.type||''})):[];
+    return {v:1,at:+o.at||0,taskId:String(o.taskId),page:o.page||'work',name:o.name||'',phone:o.phone||'',address:o.address||'',notes:o.notes||'',ll:Array.isArray(o.ll)?o.ll:null,att};
+  }catch(e){return null}
+}
+function photoSessionStale(s, now, maxAge){
+  if(!s)return true;
+  const age=maxAge==null?900000:maxAge;
+  if(!s.at)return false;
+  return (+now)-(+s.at)>age;
+}
+function pendingHolds(editId, raw, now){
+  const s=parsePhotoSession(raw);
+  if(!s||editId==null||String(s.taskId)!==String(editId))return false;
+  if(photoSessionStale(s, now))return false;
+  return true;
+}
+function taskFromSession(s){
+  if(!s||s.taskId==null)return null;
+  const t={id:String(s.taskId),name:s.name||'',phone:s.phone||'',address:s.address||'',notes:s.notes||'',att:Array.isArray(s.att)?s.att.map(a=>({id:a.id,name:a.name,type:a.type})):[],page:s.page||'work'};
+  if(s.ll)t.ll=s.ll;
+  return t;
+}
+function restoredPhoto(ev){
+  if(!ev||typeof ev!=='object')return null;
+  const plugin=String(ev.pluginId||'');
+  const method=String(ev.methodName||'');
+  if(!/camera/i.test(plugin))return null;
+  if(method&&!/getphoto/i.test(method))return null;
+  if(ev.success===false)return {ok:false,error:(ev.error&&(ev.error.message||ev.error))||'camera failed'};
+  const data=ev.data&&typeof ev.data==='object'?ev.data:null;
+  const b64=data&&(data.base64String||data.base64);
+  if(!b64||typeof b64!=='string')return {ok:false,error:'empty photo'};
+  return {ok:true,base64String:b64,format:data.format||'jpeg'};
+}
+function planPhotoRestore(session, restored, items){
+  if(!session||session.taskId==null)return {action:'none'};
+  const id=String(session.taskId);
+  const exists=(items||[]).some(t=>t&&String(t.id)===id);
+  if(!restored)return {action:'wait',taskId:id,exists};
+  if(!restored.ok)return {action:exists?'reopen':'drop',taskId:id,exists};
+  return {action:'attach',taskId:id,exists,create:!exists};
+}
+function attachPhoto(task, att){
+  if(!task||!att||att.id==null)return null;
+  const next={...task,att:[...(Array.isArray(task.att)?task.att:[]),att]};
+  delete next.fresh;
+  return next;
+}
+// </photo-pure>
 let tombstones=[],stateTrusted=false,persistedSnap='',flushQ=Promise.resolve(),keyAbort=null,saveWarned=false,booting=true;
 let dbp=new Promise((res,rej)=>{const q=indexedDB.open('ran_files',2);
   q.onupgradeneeded=()=>{const d=q.result;if(!d.objectStoreNames.contains('f'))d.createObjectStore('f');if(!d.objectStoreNames.contains('k'))d.createObjectStore('k')};
@@ -349,14 +410,32 @@ function save(){
   scheduleBackup();
   return flushQ;
 }
-window.__rkFlush=function(){try{if(sess)commit()}catch(e){}
+let sheetHold={hidden:false,paused:false,capture:false,perm:false},sheetWanted=false,suspendReopen=false,photoRestoreBuf=null,photoRestoreBusy=null,lastIngestSig='';
+const PHOTO_PENDING_KEY='rk_photo_pending';
+function liveHold(){
+  return {hidden:sheetHold.hidden||!!document.hidden,paused:!!sheetHold.paused,capture:!!sheetHold.capture,perm:!!sheetHold.perm,suspend:!!suspendReopen};
+}
+function reopenHeldSheet(){
+  if(suspendReopen||!sheetWanted||editId==null||dlg.open||!byId(editId))return;
+  try{dlg.showModal()}catch(e){}
+}
+window.__rkFlush=function(){
+  try{if(sess&&sess.dirty)applyDraft()}catch(e){}
   if(!stateTrusted)return;
   try{localStorage.setItem(K,JSON.stringify({v:2,items:liveItems(),tombstones}))}catch(e){}
   flushQ=flushQ.then(()=>flushBody()).catch(e=>console.warn('flush',e));
 };
-addEventListener('visibilitychange',()=>{if(document.hidden)window.__rkFlush()});
-addEventListener('pagehide',()=>window.__rkFlush());
-if(PL.App&&PL.App.addListener){PL.App.addListener('pause',()=>window.__rkFlush());PL.App.addListener('appStateChange',s=>{if(s&&s.isActive===false)window.__rkFlush()})}
+function onHide(){sheetHold.hidden=true;sheetHold.paused=true;window.__rkFlush()}
+function onShow(){sheetHold.paused=false;sheetHold.hidden=!!document.hidden;reopenHeldSheet()}
+addEventListener('visibilitychange',()=>{if(document.hidden)onHide();else onShow()});
+addEventListener('pagehide',()=>onHide());
+function onAppRestoredResult(ev){const parsed=restoredPhoto(ev);if(!parsed)return;photoRestoreBuf=parsed;if(!booting)queuePhotoRestore()}
+if(PL.App&&PL.App.addListener){
+  PL.App.addListener('pause',()=>onHide());
+  PL.App.addListener('resume',()=>onShow());
+  PL.App.addListener('appStateChange',s=>{if(s&&s.isActive===false)onHide();else if(s&&s.isActive===true)onShow()});
+  PL.App.addListener('appRestoredResult',ev=>{try{onAppRestoredResult(ev)}catch(e){console.warn('photo restore',e)}});
+}
 async function askPersist(){try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}}
 async function loadAll(){
   await askPersist();
@@ -372,10 +451,11 @@ let gTok=localStorage.gTokExp>Date.now()?sessionStorage.gTok:null,gUser=localSto
 async function gSignIn(fromOnb, opts){if(!GOOGLE_WEB_CLIENT_ID){toast('Google עדיין לא מוגדר (חסר Client ID) – ממשיך במצב מקומי',1);if(fromOnb)onbDone();return false}
  if(!NATIVE||!PL.SocialLogin){toast('התחברות Google זמינה באפליקציית האנדרואיד',1);if(fromOnb)onbDone();return false}
  const skipRestore=opts&&opts.skipRestore;
+ const prevPerm=sheetHold.perm;if(dlg.open)sheetHold.perm=true;
  try{await PL.SocialLogin.initialize({google:{webClientId:GOOGLE_WEB_CLIENT_ID,mode:'online'}});
   const r=(await PL.SocialLogin.login({provider:'google',options:{scopes:[DRIVE_SCOPE,'email','profile']}})).result;
   gTok=r.accessToken&&r.accessToken.token;sessionStorage.gTok=gTok;localStorage.gTokExp=Date.now()+50*60e3;gUser=(r.profile&&r.profile.email)||'';localStorage.gUser=gUser;localStorage.gOn=1;
-  if(fromOnb)onbDone();if(!skipRestore){await restoreIfNeeded();scheduleBackup(1)}return true}catch(e){toast('ההתחברות נכשלה',1);return false}}
+  if(fromOnb)onbDone();if(!skipRestore){await restoreIfNeeded();scheduleBackup(1)}return true}catch(e){toast('ההתחברות נכשלה',1);return false}finally{sheetHold.perm=prevPerm;reopenHeldSheet()}}
 async function gfetch(url,opt={},retry=1){if(!gTok&&localStorage.gOn)await gSignIn(false,{skipRestore:true});if(!gTok)throw new Error('no token');
  const r=await fetch(url,{...opt,headers:{...(opt.headers||{}),Authorization:'Bearer '+gTok}});if(r.status==401&&retry){gTok=null;await gSignIn(false,{skipRestore:true});return gfetch(url,opt,0)}if(!r.ok)throw new Error('drive '+r.status);return r}
 const DQ='https://www.googleapis.com/drive/v3/files',DU='https://www.googleapis.com/upload/drive/v3/files';
@@ -416,14 +496,85 @@ function onbDone(){localStorage.onb=1;onb.style.display='none';setTimeout(permsO
 // ===== native attachments (Capacitor Camera / FilePicker), web fallback = <input type=file>
 async function storeBlob(blob,name){const id='a'+Date.now()+Math.random().toString(36).slice(2,6);await idb('put',blob,id);draftAtt.push({id,name,type:blob.type||'application/octet-stream'})}
 const b64blob=(b,type)=>new Blob([unb64(b)],{type});
-async function addPhoto(){if(!NATIVE||!PL.Camera)return cap.click();await ensurePerms('camera');try{const r=await PL.Camera.getPhoto({resultType:'base64',source:'PROMPT',quality:80,width:2000,correctOrientation:true,promptLabelHeader:'הוספת תמונה',promptLabelPhoto:'מהגלריה',promptLabelPicture:'צלם',promptLabelCancel:'ביטול'});
- const type='image/'+(r.format||'jpeg');await storeBlob(b64blob(r.base64String,type),'photo_'+Date.now()+'.'+(r.format||'jpg'));renderAtts();changed()}catch(e){if(!/cancel/i.test(e.message||''))toast('לא ניתן להוסיף תמונה',1)}}
-async function addFile(){if(!NATIVE||!PL.FilePicker)return upl.click();try{const r=await PL.FilePicker.pickFiles({readData:true,limit:0});for(const f of r.files)await storeBlob(b64blob(f.data,f.mimeType),f.name);renderAtts();changed()}catch(e){if(!/cancel/i.test(e.message||''))toast('לא ניתן לצרף קובץ',1)}}
+function cameraParts(format){const f=String(format||'jpeg').toLowerCase().replace('jpg','jpeg');if(f==='png')return {type:'image/png',ext:'png'};if(f==='gif')return {type:'image/gif',ext:'gif'};return {type:'image/jpeg',ext:'jpg'}}
+function writePhotoPending(){
+  if(editId==null)return;
+  const t=byId(editId)||{};
+  const attSrc=(draftAtt&&draftAtt.length)?draftAtt:(t.att||[]);
+  const rec={v:1,at:Date.now(),taskId:String(editId),page:t.page||P[Math.min(curPage,2)][0],name:(f.name&&f.name.value)||t.name||'',phone:(f.phone&&f.phone.value)||t.phone||'',address:(f.address&&f.address.value)||t.address||'',notes:(f.notes&&f.notes.value)||t.notes||'',ll:draftLL||t.ll||null,att:attSrc.map(a=>({id:a.id,name:a.name,type:a.type}))};
+  try{localStorage.setItem(PHOTO_PENDING_KEY,JSON.stringify(rec))}catch(e){}
+}
+function clearPhotoPending(){try{localStorage.removeItem(PHOTO_PENDING_KEY)}catch(e){}}
+function armCapture(){sheetHold.capture=true;sheetWanted=true;try{if(sess&&sess.dirty)applyDraft()}catch(e){}writePhotoPending()}
+async function ingestPhoto(r, taskId){
+  const b64s=r&&(r.base64String||r.base64);
+  if(!b64s||taskId==null)return false;
+  const sig=String(taskId)+':'+b64s.length+':'+b64s.slice(0,40);
+  if(sig===lastIngestSig)return true;
+  const parts=cameraParts(r.format);
+  const att={id:'a'+Date.now()+Math.random().toString(36).slice(2,6),name:'photo_'+Date.now()+'.'+parts.ext,type:parts.type};
+  await idb('put',b64blob(b64s,parts.type),att.id);
+  lastIngestSig=sig;
+  const cur=byId(taskId);
+  if(!cur)return false;
+  const next=attachPhoto(cur,att);
+  if(!next)return false;
+  const idx=I.findIndex(x=>x&&String(x.id)===String(taskId));
+  if(idx<0)return false;
+  I[idx]=next;
+  if(sess&&String(editId)===String(taskId)){draftAtt=next.att.slice();sess.dirty=1;applyDraft();renderAtts()}
+  save();draw();
+  return true;
+}
+function revealTask(id){const t=byId(id);if(!t)return;const j=P.findIndex(p=>p[0]===t.page);if(j>=0){go(j,1);curPage=j;dt()}if(!dlg.open||String(editId)!==String(id))edit(id)}
+async function finishPhotoRestore(){
+  let raw=null;try{raw=localStorage.getItem(PHOTO_PENDING_KEY)}catch(e){}
+  const session=parsePhotoSession(raw);
+  if(!session){photoRestoreBuf=null;return}
+  if(!photoRestoreBuf&&!pendingHolds(session.taskId,raw,Date.now())){clearPhotoPending();return}
+  if(!photoRestoreBuf)return;
+  const buf=photoRestoreBuf;photoRestoreBuf=null;
+  if(!stateTrusted){photoRestoreBuf=buf;return}
+  const plan=planPhotoRestore(session,buf,I);
+  clearPhotoPending();
+  if(!plan||plan.action==='none'||plan.action==='wait'||plan.action==='drop')return;
+  if(plan.action==='attach'&&plan.create){const t=taskFromSession(session);if(t&&!byId(t.id))I.push(t)}
+  if((plan.action==='attach'||plan.action==='reopen')&&byId(plan.taskId))revealTask(plan.taskId);
+  if(plan.action==='attach'&&buf.ok)await ingestPhoto({base64String:buf.base64String,format:buf.format},plan.taskId);
+}
+function queuePhotoRestore(){photoRestoreBusy=(photoRestoreBusy||Promise.resolve()).then(()=>finishPhotoRestore()).catch(e=>console.warn('photo restore',e));return photoRestoreBusy}
+async function addPhoto(){
+  if(editId==null)return;
+  armCapture();
+  if(!NATIVE||!PL.Camera){cap.click();setTimeout(()=>{if(!document.hidden){sheetHold.capture=false;clearPhotoPending()}},120000);return}
+  try{
+    if(!await ensurePerms('camera')){clearPhotoPending();return}
+    const r=await PL.Camera.getPhoto({resultType:'base64',source:'PROMPT',quality:80,width:2000,correctOrientation:true,promptLabelHeader:'הוספת תמונה',promptLabelPhoto:'מהגלריה',promptLabelPicture:'צלם',promptLabelCancel:'ביטול'});
+    await ingestPhoto(r,editId);
+    clearPhotoPending();
+  }catch(e){clearPhotoPending();const msg=String((e&&e.message)||e||'');if(!/cancel/i.test(msg))toast('לא ניתן להוסיף תמונה',1)}
+  finally{sheetHold.capture=false;reopenHeldSheet()}
+}
+async function addFile(){
+  if(editId==null&&(NATIVE&&PL.FilePicker))return;
+  armCapture();
+  if(!NATIVE||!PL.FilePicker){upl.click();setTimeout(()=>{if(!document.hidden){sheetHold.capture=false;clearPhotoPending()}},120000);return}
+  try{
+    const r=await PL.FilePicker.pickFiles({readData:true,limit:0});
+    for(const file of r.files)await storeBlob(b64blob(file.data,file.mimeType),file.name);
+    renderAtts();changed();clearPhotoPending();
+  }catch(e){clearPhotoPending();const msg=String((e&&e.message)||e||'');if(!/cancel/i.test(msg))toast('לא ניתן לצרף קובץ',1)}
+  finally{sheetHold.capture=false;reopenHeldSheet()}
+}
+cap.addEventListener('cancel',()=>{if(NATIVE&&PL.Camera)return;sheetHold.capture=false;clearPhotoPending();reopenHeldSheet()});
+upl.addEventListener('cancel',()=>{if(NATIVE&&PL.FilePicker)return;sheetHold.capture=false;clearPhotoPending();reopenHeldSheet()});
 // ===== contacts
 async function pickContact(){if(!NATIVE||!PL.Contacts){toast('בחירת איש קשר זמינה באפליקציה',1);return}
+ sheetHold.capture=true;sheetWanted=true;
  try{if(!await ensurePerms('contacts')){toast('אין הרשאה לאנשי קשר',1);return}
  const c=(await PL.Contacts.pickContact({projection:{name:true,phones:true}})).contact;const ph=c&&c.phones&&c.phones[0]&&c.phones[0].number;
- if(ph)f.phone.value=ph;if(!f.name.value.trim()&&c.name&&c.name.display)f.name.value=c.name.display;changed()}catch(e){}}
+ if(ph)f.phone.value=ph;if(!f.name.value.trim()&&c.name&&c.name.display)f.name.value=c.name.display;changed()}catch(e){}
+ finally{sheetHold.capture=false;reopenHeldSheet()}}
 // ===== address autocomplete (pluggable provider; default Photon/OSM, free)
 const ADDR={photon:{async suggest(q){const r=await fetch('https://photon.komoot.io/api/?limit=5&lat=32.08&lon=34.83&bbox=34.2,29.4,35.95,33.4&q='+encodeURIComponent(q));const j=await r.json();
  return j.features.map(f=>{const p=f.properties,st=[p.street||p.name,p.housenumber].filter(Boolean).join(' '),city=p.city||p.town||p.village||p.county||'';return{label:[st,city].filter(Boolean).join(', '),sub:p.name&&p.street?p.name:'',ll:[f.geometry.coordinates[1],f.geometry.coordinates[0]]}}).filter(x=>x.label).map(x=>{const n=(q.match(/\d+/)||[])[0];if(n&&!/\d/.test(x.label.split(',')[0]))x.label=x.label.replace(/^([^,]+)/,'$1 '+n);return x}).filter((x,i,a)=>a.findIndex(y=>y.label==x.label)==i)}},
@@ -469,27 +620,36 @@ function dragMove(x){if(!dragging)return;if(dragX0==null)dragX0=x;const dx=x-dra
 document.addEventListener('touchmove',e=>dragMove(e.touches[0].clientX),{passive:true,capture:true});document.addEventListener('pointermove',e=>{if(e.pointerType!='touch')dragMove(e.clientX)},{capture:true});
 document.addEventListener('contextmenu',e=>{if(!e.target.closest('input,textarea'))e.preventDefault()});
 // close dialogs on backdrop tap
-document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target===d)d.close()}));
+document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target!==d)return;if(d===dlg&&onDialogCancel(liveHold())==='prevent')return;d.close()}));
 function mvTo(id,k){const fromTr=byId(id).page=='trash';act(k=='trash'?'הועבר לזבל':(fromTr?'שוחזר ל':'הועבר ל')+pn(k),()=>{const t=byId(id);if(k=='trash')t.prev=t.page;t.page=k;I=I.filter(x=>x!==t);k=='trash'?I.unshift(t):I.push(t)})}
 // ---- edit sheet
 let draftAtt=[],draftLL=null;
 let sess=null,saveT=null;
 function edit(id){if(!id){const t={id:'t'+Date.now(),name:'',phone:'',address:'',notes:'',att:[],page:P[Math.min(curPage,2)][0],fresh:1};I.push(t);id=t.id}
-editId=id;const t=byId(id),tr=t.page=='trash';sess={snap:JSON.stringify(I.filter(x=>!x.fresh||x.id!=id)),pushed:false};
+editId=id;const t=byId(id);if(!t)return;const tr=t.page=='trash';sess={snap:JSON.stringify(I.filter(x=>!x.fresh||x.id!=id)),pushed:false};sheetWanted=true;
 dtt.textContent=tr?'בזבל':pn(t.page);iWA.style.display=iCal.style.display=!tr&&!t.fresh?'':'none';iRes.style.display=iDel.style.display=tr?'':'none';
-mvrow.innerHTML=t.fresh?'':P.filter(p=>p[0]!=t.page).map(([k,n])=>`<button type="button" class="${k=='trash'?'tr':''}" onclick="sheetMove('${k}')"><i>${tr?'↶':k=='trash'?'🗑':'→'}</i>${n}</button>`).join('');for(const e of f.elements)if(e.name)e.value=t[e.name]||'';draftAtt=[...(t.att||[])];draftLL=t.ll||null;links();renderAtts();dbox.style.transform='';dlg.showModal();if(t.fresh)setTimeout(()=>f.name.focus(),50)}
+mvrow.innerHTML=t.fresh?'':P.filter(p=>p[0]!=t.page).map(([k,n])=>`<button type="button" class="${k=='trash'?'tr':''}" onclick="sheetMove('${k}')"><i>${tr?'↶':k=='trash'?'🗑':'→'}</i>${n}</button>`).join('');for(const e of f.elements)if(e.name)e.value=t[e.name]||'';draftAtt=[...(t.att||[])];draftLL=t.ll||null;links();renderAtts();dbox.style.transform='';try{if(!dlg.open)dlg.showModal()}catch(e){}if(t.fresh)setTimeout(()=>f.name.focus(),50)}
 function applyDraft(){const t=byId(editId);if(!t||!sess||!sess.dirty)return;const d=Object.fromEntries(new FormData(f));Object.assign(t,d,{att:draftAtt,ll:draftLL});
  if(t.fresh&&(t.name||t.phone||t.address||t.notes||(t.att||[]).length))delete t.fresh;if(!t.fresh&&!sess.pushed){H.push(sess.snap);sess.pushed=true}}
 function changed(){if(!sess)return;sess.dirty=1;applyDraft();save();clearTimeout(saveT);saveT=setTimeout(()=>{const t=byId(editId);if(!t)return;draw();iWA.style.display=iCal.style.display=t.page!='trash'&&!t.fresh?'':'none'},400)}
 function commit(){clearTimeout(saveT);if(!sess)return;const dirty=!!sess.dirty;applyDraft();if(dirty){sess.dirty=0;save();draw()}const t=byId(editId);if(t)iWA.style.display=iCal.style.display=t.page!='trash'&&!t.fresh?'':'none'}
 f.addEventListener('input',changed);
-dlg.addEventListener('close',()=>{if(!sess)return;commit();const t=byId(editId);if(t&&t.fresh){I=I.filter(x=>x!==t);save();draw()}else if(sess.pushed)toast('נשמר');sess=null});
+dlg.addEventListener('cancel',e=>{if(onDialogCancel(liveHold())==='prevent')e.preventDefault()});
+dlg.addEventListener('close',()=>{
+  if(!sess)return;
+  const action=onDialogClose(liveHold());
+  if(action==='ignore'){const id=editId;setTimeout(()=>{if(sheetWanted&&id!=null&&String(editId)===String(id)&&!dlg.open)reopenHeldSheet()},0);return}
+  commit();const t=byId(editId);
+  if(t&&t.fresh){I=I.filter(x=>x!==t);save();draw()}else if(sess.pushed)toast('נשמר');
+  sess=null;sheetWanted=false;
+});
 function links(){const a=f.address.value.trim(),q=draftLL?draftLL.join(','):a;lw.style.display=lg.style.display=q?'':'none';lw.href=draftLL?`https://waze.com/ul?ll=${q}&navigate=yes`:`https://waze.com/ul?q=${encodeURIComponent(a)}&navigate=yes`;lg.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
 f.address.addEventListener('input',()=>{draftLL=null;links()});
-function here(){if(!navigator.geolocation)return alert('אין גישה למיקום');navigator.geolocation.getCurrentPosition(p=>{draftLL=[+p.coords.latitude.toFixed(6),+p.coords.longitude.toFixed(6)];if(!f.address.value)f.address.value='מיקום נוכחי';links();changed()},()=>alert('לא ניתן לקבל מיקום'),{enableHighAccuracy:true,timeout:10000})}
-async function addAtt(inp){for(const file of inp.files){const id='a'+Date.now()+Math.random().toString(36).slice(2,6);await idb('put',file,id);draftAtt.push({id,name:file.name,type:file.type})}inp.value='';renderAtts();changed()}
-async function renderAtts(){atts.innerHTML='';for(const a of draftAtt){const d=document.createElement('div');d.className='att';d.innerHTML=`<button type="button">✕</button>${esc(a.name)}`;d.querySelector('button').onclick=e=>{e.stopPropagation();draftAtt=draftAtt.filter(x=>x!==a);renderAtts();changed()};
-const b=await idb('get',a.id);if(b){const u=URL.createObjectURL(b);if(/^image/.test(a.type)){const im=new Image();im.src=u;d.appendChild(im)}d.onclick=()=>open(u,'_blank')}atts.appendChild(d)}}
+function here(){if(!navigator.geolocation)return alert('אין גישה למיקום');const prev=sheetHold.perm;sheetHold.perm=true;sheetWanted=true;const done=()=>{sheetHold.perm=prev;reopenHeldSheet()};navigator.geolocation.getCurrentPosition(p=>{done();draftLL=[+p.coords.latitude.toFixed(6),+p.coords.longitude.toFixed(6)];if(!f.address.value)f.address.value='מיקום נוכחי';links();changed()},()=>{done();alert('לא ניתן לקבל מיקום')},{enableHighAccuracy:true,timeout:10000})}
+async function addAtt(inp){sheetHold.capture=true;sheetWanted=true;try{for(const file of inp.files){const id='a'+Date.now()+Math.random().toString(36).slice(2,6);await idb('put',file,id);draftAtt.push({id,name:file.name,type:file.type})}inp.value='';renderAtts();changed()}finally{sheetHold.capture=false;clearPhotoPending();reopenHeldSheet()}}
+let attGen=0;
+async function renderAtts(){const gen=++attGen,list=draftAtt.slice();atts.innerHTML='';for(const a of list){if(gen!==attGen)return;const d=document.createElement('div');d.className='att';d.innerHTML=`<button type="button">✕</button>${esc(a.name)}`;d.querySelector('button').onclick=e=>{e.stopPropagation();draftAtt=draftAtt.filter(x=>x!==a);renderAtts();changed()};
+const b=await idb('get',a.id);if(gen!==attGen)return;if(b){const u=URL.createObjectURL(b);if(/^image/.test(a.type)){const im=new Image();im.src=u;d.appendChild(im)}d.onclick=()=>open(u,'_blank')}atts.appendChild(d)}}
 // swipe-down to close: anywhere on the sheet or backdrop
 (function(){let y0=null,x0,dy=0,t0,on=false,tgt;
 dlg.addEventListener('touchstart',e=>{const t=e.touches[0];y0=t.clientY;x0=t.clientX;dy=0;on=false;t0=Date.now();tgt=e.target},{passive:true});
@@ -499,7 +659,7 @@ dlg.addEventListener('touchmove',e=>{if(y0==null)return;const t=e.touches[0],my=
   on=true;y0=t.clientY;dbox.style.transition='none';if(document.activeElement&&document.activeElement.blur)document.activeElement.blur()}
  e.preventDefault();dy=Math.max(0,t.clientY-y0);dbox.style.transform=`translateY(${dy}px)`},{passive:false});
 dlg.addEventListener('touchend',e=>{if(y0==null||!on){y0=null;return}y0=null;on=false;e.preventDefault();const v=dy/Math.max(1,Date.now()-t0);dbox.style.transition='';
- if(dy>90||v>.5&&dy>30){dbox.style.transition='transform .22s ease-in';dbox.style.transform='translateY(110%)';setTimeout(()=>dlg.close(),200)}else dbox.style.transform=''})})();
+ if(dy>90||v>.5&&dy>30){if(onDialogCancel(liveHold())==='prevent'){dbox.style.transform='';return}dbox.style.transition='transform .22s ease-in';dbox.style.transform='translateY(110%)';setTimeout(()=>dlg.close(),200)}else dbox.style.transform=''})})();
 
 // ---- calendar (visual mock)
 let calId=null,calDate=null;const iso=d=>d.toISOString().slice(0,10),HM=['ינו','פבר','מרץ','אפר','מאי','יונ','יול','אוג','ספט','אוק','נוב','דצמ'];
@@ -508,8 +668,8 @@ const pad=n=>String(n).padStart(2,'0'),loc=d=>`${d.getFullYear()}-${pad(d.getMon
 const fmtW=w=>fmtD(w.slice(0,10))+' '+w.slice(11,16);
 function quick(){const n=new Date(),r=[];const add=(l,d)=>r.push([l,loc(d)]);add('בעוד שעה',new Date(+n+36e5));add('בעוד שעתיים',new Date(+n+72e5));
  const ev=new Date(n);ev.setHours(20,0,0,0);if(ev>n)add('הערב 20:00',ev);const tm=new Date(n);tm.setDate(tm.getDate()+1);tm.setHours(9,0,0,0);add('מחר 09:00',tm);const d2=new Date(n);d2.setDate(d2.getDate()+2);d2.setHours(9,0,0,0);add('בעוד יומיים',d2);return r}
-function askCal(id){const t=byId(id);if(!t)return;calId=id;cn.textContent=t.name;const q=quick();qr.innerHTML=q.map(([l,w])=>`<button class="dchip" onclick="remSave('${w}')">${l}<small>${fmtW(w)}</small></button>`).join('');
- cdt.value=t.when||q[3][1];cdt.min=loc(new Date());const d=new Date(cdt.value);cd.textContent=d.getDate();remClr.style.display=t.when?'':'none';ensurePerms('notif');cal.showModal()}
+async function askCal(id){const t=byId(id);if(!t)return;calId=id;cn.textContent=t.name;const q=quick();qr.innerHTML=q.map(([l,w])=>`<button class="dchip" onclick="remSave('${w}')">${l}<small>${fmtW(w)}</small></button>`).join('');
+ cdt.value=t.when||q[3][1];cdt.min=loc(new Date());const d=new Date(cdt.value);cd.textContent=d.getDate();remClr.style.display=t.when?'':'none';await ensurePerms('notif');openSheet(cal)}
 function remSave(w){const id=calId;cal.close();if(w&&new Date(w)<=new Date()){toast('בחר זמן עתידי',1);return}
  act(w?'⏰ תזכורת ל'+fmtW(w):'התזכורת הוסרה',()=>{const t=byId(id);if(w)t.when=w;else delete t.when});syncReminders()}
 // ===== local notifications
@@ -525,13 +685,20 @@ async function initNotifs(){if(!NATIVE||!LN)return;try{await LN.createChannel({i
   else{const j=P.findIndex(p=>p[0]==t.page);go(j,1);setTimeout(()=>edit(tid),300)}});syncReminders()}
 // ===== permissions with explanations
 const PERM_TXT={notif:['התראות ותזכורות','כדי שתזכורות יקפצו בזמן, גם כשהאפליקציה סגורה.'],camera:['מצלמה','לצילום מראות, מידות ומסמכים לתוך המשימה.'],contacts:['אנשי קשר','כדי למלא טלפון ושם של לקוח בלחיצה.']};
-async function ensurePerms(which){if(!NATIVE)return true;const seen=JSON.parse(localStorage.permSeen||'{}');
+function openSheet(d){
+  if(!d)return false;
+  if(d.open)return true;
+  const nest=d!==dlg&&dlg.open;
+  if(nest){suspendReopen=true;try{dlg.close()}catch(e){}d.addEventListener('close',()=>{suspendReopen=false;reopenHeldSheet()},{once:true})}
+  try{d.showModal();return true}catch(e){try{d.show();return true}catch(err){if(nest){suspendReopen=false;reopenHeldSheet()}return false}}
+}
+async function ensurePerms(which){if(!NATIVE)return true;const seen=JSON.parse(localStorage.permSeen||'{}');const prevPerm=sheetHold.perm;sheetHold.perm=true;
  try{if(which=='notif'&&LN){let s=await LN.checkPermissions();if(s.display!='granted'){if(!seen.notif&&!await explain('notif'))return false;seen.notif=1;s=await LN.requestPermissions()}
    try{const ex=await LN.checkExactNotificationSetting();if(ex.exact_alarm!='granted'&&!seen.exact){seen.exact=1;localStorage.permSeen=JSON.stringify(seen);if(await explain('notif','לתזכורות מדויקות יש לאשר "שעונים מעוררים ותזכורות" במסך הבא.'))await LN.changeExactNotificationSetting()}}catch(e){}
    localStorage.permSeen=JSON.stringify(seen);return s.display=='granted'}
   if(which=='camera'&&PL.Camera){const s=await PL.Camera.checkPermissions();if(s.camera!='granted'){if(!seen.camera&&!await explain('camera'))return false;seen.camera=1;localStorage.permSeen=JSON.stringify(seen);await PL.Camera.requestPermissions({permissions:['camera','photos']})}return true}
-  if(which=='contacts'&&PL.Contacts){const s=await PL.Contacts.checkPermissions();if(s.contacts!='granted'){if(!seen.contacts&&!await explain('contacts'))return false;seen.contacts=1;localStorage.permSeen=JSON.stringify(seen);return (await PL.Contacts.requestPermissions()).contacts=='granted'}return true}}catch(e){console.warn(e)}return true}
-function explain(k,extra){return new Promise(r=>{pmt.textContent=PERM_TXT[k][0];pmx.textContent=extra||PERM_TXT[k][1];pmd.showModal();pmok.onclick=()=>{pmd.close();r(true)};pmd.onclose=()=>r(false)})}
+  if(which=='contacts'&&PL.Contacts){const s=await PL.Contacts.checkPermissions();if(s.contacts!='granted'){if(!seen.contacts&&!await explain('contacts'))return false;seen.contacts=1;localStorage.permSeen=JSON.stringify(seen);return (await PL.Contacts.requestPermissions()).contacts=='granted'}return true}}catch(e){console.warn(e);return true}finally{sheetHold.perm=prevPerm;reopenHeldSheet()}}
+function explain(k,extra){if(dlg.open||suspendReopen)return Promise.resolve(true);return new Promise(r=>{pmt.textContent=PERM_TXT[k][0];pmx.textContent=extra||PERM_TXT[k][1];let done=false;const finish=v=>{if(done)return;done=true;r(!!v)};pmok.onclick=()=>{finish(true);try{pmd.close()}catch(e){}};pmd.addEventListener('close',()=>finish(false),{once:true});if(!openSheet(pmd))finish(true)})}
 async function permsOnboarding(){if(!NATIVE||localStorage.permOnb)return;localStorage.permOnb=1;await ensurePerms('notif')}
 
 function sheetMove(k){const id=editId;dlg.close();mvTo(id,k)}
@@ -542,13 +709,13 @@ function waText(t){const L=['*'+t.name+'*'];const q=t.ll?t.ll.join(','):t.addres
 if(t.address||t.ll)L.push('📍 '+(t.address||'מיקום')+'\n'+'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q));
 if(t.phone)L.push('📞 '+t.phone);if(t.when){const d=new Date(t.when);L.push('📅 '+d.toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'})+' בשעה '+t.when.slice(11))}
 if(t.notes)L.push('📝 '+t.notes);return L.join('\n\n')}
-async function shareWA(id){const t=byId(id),text=waText(t),imgs=(t.att||[]).filter(a=>/^image/.test(a.type));
+async function shareWA(id){sheetHold.capture=true;sheetWanted=true;try{const t=byId(id),text=waText(t),imgs=(t.att||[]).filter(a=>/^image/.test(a.type));
  if(NATIVE&&PL.Share&&PL.Filesystem){try{const files=[];for(const a of t.att||[]){const b=await idb('get',a.id);if(!b)continue;const d=b64(await b.arrayBuffer()),nm=(a.id+'_'+(a.name||'file')).replace(/[^\w.\-]/g,'_');
    files.push((await PL.Filesystem.writeFile({path:'share/'+nm,data:d,directory:'CACHE',recursive:true})).uri)}
    await PL.Share.share({title:t.name,text,files:files.length?files:undefined,dialogTitle:'שיתוף'});return}catch(e){if(/cancel/i.test(e.message||''))return}}
  if(navigator.share){try{const files=[];for(const a of imgs){const b=await idb('get',a.id);if(b)files.push(new File([b],a.name||'photo.jpg',{type:a.type}))}
   const d={text};if(files.length&&navigator.canShare&&navigator.canShare({files}))d.files=files;await navigator.share(d);return}catch(e){if(e.name=='AbortError')return}}
- open('https://wa.me/?text='+encodeURIComponent(text),'_blank')}
+ open('https://wa.me/?text='+encodeURIComponent(text),'_blank')}finally{sheetHold.capture=false;reopenHeldSheet()}}
 // ---- install prompt (once)
 let dp;const standalone=matchMedia('(display-mode: fullscreen),(display-mode: standalone)').matches||navigator.standalone;
 function instDone(){inst.style.display='none';localStorage.instShown=1}
@@ -568,8 +735,10 @@ if(/iphone|ipad/i.test(navigator.userAgent)&&!standalone&&!localStorage.instShow
     stateTrusted=true;persistedSnap=JSON.stringify({v:2,items:liveItems(),tombstones});
     if(loaded.healed||typed.length){try{await flushBody()}catch(e){console.warn('heal',e)}}
   }
-  booting=false;fab.style.pointerEvents='';draw();go(2,1);initNotifs();if(localStorage.onb)permsOnboarding();
+  booting=false;fab.style.pointerEvents='';draw();go(2,1);
+  try{await queuePhotoRestore()}catch(e){console.warn('photo restore',e)}
+  initNotifs();if(localStorage.onb)permsOnboarding();
   if(!localStorage.onb)onb.style.display='flex';if(stateTrusted&&localStorage.gOn)scheduleBackup(!I.length);
-  if(!NATIVE&&'serviceWorker'in navigator&&location.protocol=='https:')navigator.serviceWorker.register('sw.js')
+  if(!NATIVE&&'serviceWorker'in navigator&&location.protocol=='https:')navigator.serviceWorker.register('sw.js');
 })();
 </script></body></html>

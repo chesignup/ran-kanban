@@ -1,13 +1,20 @@
 package il.co.karisi.ran;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
-  @Override public void onCreate(Bundle b) { super.onCreate(b); immersive(); }
+  private final Handler main = new Handler(Looper.getMainLooper());
+  @Override public void onCreate(Bundle b) {
+    registerPlugin(RanCapturePlugin.class);
+    super.onCreate(b);
+    immersive();
+  }
   @Override public void onPause() {
     try {
       if (getBridge() != null && getBridge().getWebView() != null)
@@ -15,7 +22,9 @@ public class MainActivity extends BridgeActivity {
     } catch (Throwable ignored) {}
     super.onPause();
   }
-  @Override public void onWindowFocusChanged(boolean f) { super.onWindowFocusChanged(f); if (f) immersive(); }
+  // Hide bars on the next turn. Doing it inside this callback holds the window
+  // lock while a photo-picker result is delivered, and Android 16 then denies the URI.
+  @Override public void onWindowFocusChanged(boolean f) { super.onWindowFocusChanged(f); if (f) main.post(this::immersive); }
   private void immersive() {
     WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
     WindowInsetsControllerCompat c = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());

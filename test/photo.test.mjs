@@ -82,6 +82,26 @@ test('restored camera result attaches to the same task, or reopens it', () => {
   assert.equal(attachPhoto(null, {id: 'a'}), null);
 });
 
+test('gallery bytes and a separate camera source both count as a photo', () => {
+  const api2 = new Function(pure[1] + '\nreturn {normalizePhotoResult,captureSource,restoredPhoto};')();
+  assert.equal(api2.captureSource('photos'), 'PHOTOS');
+  assert.equal(api2.captureSource('camera'), 'CAMERA');
+  assert.equal(api2.captureSource(undefined), 'CAMERA');
+  const fromPicker = api2.normalizePhotoResult({webPath: 'https://localhost/_capacitor_file_/cache/a.jpg', format: 'jpeg'});
+  assert.equal(fromPicker.base64String, '');
+  assert.equal(fromPicker.webPath.includes('a.jpg'), true);
+  assert.equal(api2.normalizePhotoResult({dataUrl: 'data:image/jpeg;base64,QUJD'}).base64String, 'QUJD');
+  assert.equal(api2.normalizePhotoResult({}), null);
+  const ran = api2.restoredPhoto({pluginId: 'RanCapture', methodName: 'capture', success: true, data: {base64String: 'QUJD', format: 'jpeg'}});
+  assert.equal(ran.ok, true);
+  assert.equal(ran.base64String, 'QUJD');
+  assert.equal(api2.restoredPhoto({pluginId: 'RanCapture', methodName: 'pickContact', success: true, data: {base64String: 'x'}}), null);
+  assert.match(html, /addPhoto\('camera'\)/);
+  assert.match(html, /addPhoto\('photos'\)/);
+  assert.match(html, /rk\/att\//);
+  assert.doesNotMatch(html.slice(html.indexOf('async function addPhoto'), html.indexOf('async function addFile')), /source:'PROMPT'/);
+});
+
 test('pause flush and photo wiring do not close the open sheet', () => {
   const flush = html.match(/window\.__rkFlush=function\(\)\{([\s\S]*?)\n\};/);
   assert.ok(flush, '__rkFlush');

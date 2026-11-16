@@ -14,10 +14,10 @@ header .sub{display:block;font-size:0.8125rem;font-weight:400;color:var(--mute);
 .ib{border:0;background:transparent;color:var(--ink);width:2.625rem;height:2.625rem;border-radius:50%;display:grid;place-items:center;transition:.2s}.ib:active{background:var(--soft)}.ib:disabled{opacity:.25}
 .ib svg{width:1.375rem;height:1.375rem;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #tabs{display:flex;gap:0.25rem;padding:1.125rem 1.125rem 0.5rem}#tabs button{border:0;background:none;color:var(--mute);font:500 0.9375rem Rubik;padding:0.5rem 0.875rem;border-radius:62.4375rem;transition:.3s var(--ease)}#tabs button.on{background:var(--ink);color:#fff}#tabs span{opacity:.55;margin-inline-start:0.3125rem;font-size:0.75rem}
-#pages{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;height:calc(100% - 9.375rem - env(safe-area-inset-top))}#pages::-webkit-scrollbar{display:none}
+#pages{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;height:calc(100% - 9.375rem - env(safe-area-inset-top))}#pages::-webkit-scrollbar{display:none}#pages.draglock{overflow-x:hidden;scroll-snap-type:none}
 .page{flex:0 0 100%;scroll-snap-align:center;scroll-snap-stop:always;overflow-y:auto;padding:0.5rem 1.125rem 8.125rem}
 .list{min-height:60vh;list-style:none;margin:0;padding:0}
-.it{background:var(--card);border-radius:1.375rem;padding:1.125rem 1.25rem;margin-bottom:0.625rem;box-shadow:0 1px 1px rgba(0,0,0,.03),0 0.5rem 1.5rem -12px rgba(0,0,0,.08);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;animation:in .4s var(--ease) both;transition:transform .25s var(--ease),box-shadow .25s}
+.it{background:var(--card);border-radius:1.375rem;padding:1.125rem 1.25rem;margin-bottom:0.625rem;box-shadow:0 1px 1px rgba(0,0,0,.03),0 0.5rem 1.5rem -12px rgba(0,0,0,.08);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;animation:in .4s var(--ease) both;transition:transform .25s var(--ease),box-shadow .25s;touch-action:pan-y}
 .it:active{transform:scale(.985)}
 @keyframes in{from{opacity:0;transform:translateY(0.625rem)}}
 .it b{display:block;font-size:1.0625rem;font-weight:600;line-height:1.35}
@@ -81,7 +81,7 @@ html{font-size:calc(16px * var(--z,1));touch-action:pan-x pan-y}
 .page{position:relative}.empty{position:absolute;top:16vh;left:0;right:0;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:.4rem}.empty .ei{width:4.2rem;height:4.2rem;border-radius:1.4rem;background:#fff;display:grid;place-items:center;font-size:1.8rem;color:#c9c8c4;box-shadow:0 .5rem 1.5rem -.8rem rgba(0,0,0,.15);margin-bottom:.8rem}.empty b{color:var(--ink);font-size:1.1rem;font-weight:600}.empty span{color:var(--mute);font-size:.92rem}
 #tabs{justify-content:space-between;gap:.25rem;padding:1.1rem 1rem .5rem}#tabs button{flex:1;padding:.5rem .3rem;white-space:nowrap}
 #mvrow{display:flex;gap:.4rem;margin:.1rem 0 .3rem}#mvrow:empty{display:none}#mvrow button{flex:1;border:0;background:var(--soft);color:var(--ink);font:500 .82rem Rubik;padding:.45rem .3rem;border-radius:999px;transition:transform .15s,background .2s}#mvrow button:active{transform:scale(.94)}#mvrow button.tr{background:#fbefee;color:var(--acc)}#mvrow i{font-style:normal;opacity:.5;margin-inline-end:.2rem}
-.acw{flex:1;min-width:0;position:relative}.acw input{width:100%}#sug{position:absolute;top:100%;right:0;left:0;background:#fff;border-radius:.9rem;box-shadow:0 .8rem 2rem -.6rem rgba(0,0,0,.25);z-index:5;overflow:hidden;display:none}#sug.on{display:block}#sug div{padding:.7rem .9rem;font-size:.92rem;border-top:1px solid var(--line)}#sug div:first-child{border:0}#sug small{display:block;color:var(--mute);font-size:.78rem}
+.acw{flex:1;min-width:0;position:relative}.acw input{width:100%}#sug{position:absolute;top:100%;right:0;left:0;background:#fff;border-radius:.9rem;box-shadow:0 .8rem 2rem -.6rem rgba(0,0,0,.25);z-index:5;overflow:hidden;display:none}#sug.on{display:block}#sug div{padding:.7rem .9rem;font-size:.92rem;border-top:1px solid var(--line);touch-action:manipulation}#sug div:first-child{border:0}#sug small{display:block;color:var(--mute);font-size:.78rem}
 .qr{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:1rem}.qr .dchip{text-align:center}.tm2{font:500 1.05rem Rubik!important;text-align:center}
 </style></head><body>
 <header><h1><span class="sub">המשימות של רן</span><span id="ttl">עבודה</span></h1>
@@ -100,8 +100,8 @@ html{font-size:calc(16px * var(--z,1));touch-action:pan-x pan-y}
 <div class="ln"><span class="li">📞</span><input name="phone" type="tel" inputmode="tel" placeholder="טלפון" dir="auto"><button type="button" class="mi" onclick="pickContact()" title="אנשי קשר"><svg viewBox="0 0 24 24" style="width:1rem;height:1rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></button></div>
 <div class="ln"><span class="li">📍</span><div class="acw"><input name="address" placeholder="מיקום" autocomplete="off"><div id="sug"></div></div><button type="button" class="mi" onclick="here()" title="מיקום נוכחי">◎</button><a class="mi" id="lw" target="_blank" title="Waze">W</a><a class="mi" id="lg" target="_blank" title="Maps">G</a></div>
 <div class="ln"><span class="li">📝</span><textarea name="notes" rows="1" placeholder="הערות"></textarea></div>
-<div class="ln at"><span class="li">📎</span><div class="atts" id="atts"></div><button type="button" class="mi" onclick="addPhoto()" title="צלם">📷</button><button type="button" class="mi" onclick="addFile()" title="קובץ">+</button></div>
-<input id="cap" type="file" accept="image/*" capture="environment" hidden onchange="addAtt(this)"><input id="upl" type="file" multiple hidden onchange="addAtt(this)">
+<div class="ln at"><span class="li">📎</span><div class="atts" id="atts"></div><button type="button" class="mi" onclick="addPhoto('camera')" title="צלם">📷</button><button type="button" class="mi" onclick="addPhoto('photos')" title="מהגלריה">🖼</button><button type="button" class="mi" onclick="addFile()" title="קובץ">+</button></div>
+<input id="cap" type="file" accept="image/*" capture="environment" hidden onchange="addAtt(this)"><input id="gal" type="file" accept="image/*" hidden onchange="addAtt(this)"><input id="upl" type="file" multiple hidden onchange="addAtt(this)">
 </form></div></dialog>
 <dialog id="pmd" class="sheet"><div><h3 id="pmt"></h3><p class="acc" id="pmx"></p><button class="btn p" id="pmok">אפשר</button><button class="btn" onclick="pmd.close()">לא עכשיו</button></div></dialog>
 <dialog id="cal" class="sheet"><div><div class="calhd"><div class="calic"><i id="cm">⏰</i><b id="cd">16</b></div><div><h3>תזכורת</h3><p id="cn"></p></div></div>
@@ -112,10 +112,11 @@ html{font-size:calc(16px * var(--z,1));touch-action:pan-x pan-y}
 <script>
 const P=[['ran','רן'],['gen','כללי'],['work','עבודה'],['trash','זבל']],K='ran_items_v2';
 // ===== config =====
-const APP_VER='0.1.7',SUPPORT_EMAIL='ran-tasks@mail.grokbot.com';
+const APP_VER='0.1.8',SUPPORT_EMAIL='ran-tasks@mail.grokbot.com';
 const GOOGLE_WEB_CLIENT_ID='155487724170-kv6v01qub9h8f1seolq5v2dqhjench45.apps.googleusercontent.com'; // Web OAuth client (project ran-tasks)
 const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.appdata';
 const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()),PL=(window.Capacitor&&Capacitor.Plugins)||{};
+function ranPlugin(){const C=window.Capacitor;if(!C)return null;if(C.Plugins&&C.Plugins.RanCapture)return C.Plugins.RanCapture;try{return C.registerPlugin?C.registerPlugin('RanCapture'):null}catch(e){return null}}
 let I=[];const SEED=()=>[];
 const byId=id=>I.find(x=>x.id==id),esc=s=>String(s||'').replace(/[&<>"]/g,c=>'&#'+c.charCodeAt(0)+';'),pn=k=>P.find(p=>p[0]==k)[1];
 // ===== encrypted local storage (AES-256-GCM)
@@ -238,17 +239,30 @@ function taskFromSession(s){
   if(s.ll)t.ll=s.ll;
   return t;
 }
+function normalizePhotoResult(r){
+  if(!r||typeof r!=='object')return null;
+  let b64=r.base64String||r.base64||'';
+  if(!b64&&typeof r.dataUrl==='string'){const i=r.dataUrl.indexOf(',');b64=i>=0?r.dataUrl.slice(i+1):''}
+  const format=r.format||'jpeg';
+  if(typeof b64==='string'&&b64)return {base64String:b64,format,path:r.path||'',webPath:r.webPath||''};
+  const path=r.path||'',webPath=r.webPath||'';
+  if(path||webPath)return {base64String:'',format,path,webPath};
+  return null;
+}
+function captureSource(which){return which==='photos'||which==='PHOTOS'?'PHOTOS':'CAMERA'}
 function restoredPhoto(ev){
   if(!ev||typeof ev!=='object')return null;
   const plugin=String(ev.pluginId||'');
   const method=String(ev.methodName||'');
-  if(!/camera/i.test(plugin))return null;
-  if(method&&!/getphoto/i.test(method))return null;
+  const camera=/camera/i.test(plugin),ran=/rancapture/i.test(plugin);
+  if(!camera&&!ran)return null;
+  if(camera&&method&&!/getphoto/i.test(method))return null;
+  if(ran&&method&&!/capture/i.test(method))return null;
   if(ev.success===false)return {ok:false,error:(ev.error&&(ev.error.message||ev.error))||'camera failed'};
   const data=ev.data&&typeof ev.data==='object'?ev.data:null;
-  const b64=data&&(data.base64String||data.base64);
-  if(!b64||typeof b64!=='string')return {ok:false,error:'empty photo'};
-  return {ok:true,base64String:b64,format:data.format||'jpeg'};
+  const n=normalizePhotoResult(data);
+  if(!n)return {ok:false,error:'empty photo'};
+  return {ok:true,base64String:n.base64String,format:n.format,path:n.path||'',webPath:n.webPath||''};
 }
 function planPhotoRestore(session, restored, items){
   if(!session||session.taskId==null)return {action:'none'};
@@ -265,6 +279,36 @@ function attachPhoto(task, att){
   return next;
 }
 // </photo-pure>
+// <gesture-pure>
+function classifyCardGesture(dt, dx, dy){
+  const holdMs=380, slop=24, flick=40;
+  const adx=Math.abs(dx), ady=Math.abs(dy);
+  if(dt>=holdMs)return 'drag';
+  if(adx<=slop && ady<=slop)return 'wait';
+  if(ady>adx && ady>slop)return 'scroll';
+  if(adx>=flick && adx>ady)return 'swipe';
+  return 'wait';
+}
+function swipePageDelta(dx){return dx<0?1:-1}
+// </gesture-pure>
+// <suggest-pure>
+function commitSuggestion(label){return {value:label==null?'':String(label),close:true}}
+function stickySuggestionValue(typed, picked, ageMs){
+  if(picked==null||ageMs>=450)return typed;
+  return picked;
+}
+// </suggest-pure>
+// <remind-pure>
+function reminderIds(items, now){
+  const out=[];
+  for(const t of items||[]){
+    if(!t||t.id==null||!t.when||t.page==='trash')continue;
+    const at=new Date(t.when).getTime();
+    if(at>now)out.push(String(t.id));
+  }
+  return out;
+}
+// </remind-pure>
 let tombstones=[],stateTrusted=false,persistedSnap='',flushQ=Promise.resolve(),keyAbort=null,saveWarned=false,booting=true;
 let dbp=new Promise((res,rej)=>{const q=indexedDB.open('ran_files',2);
   q.onupgradeneeded=()=>{const d=q.result;if(!d.objectStoreNames.contains('f'))d.createObjectStore('f');if(!d.objectStoreNames.contains('k'))d.createObjectStore('k')};
@@ -465,7 +509,7 @@ async function dPut(name,blob,existing){const meta=existing?{}:{name,parents:['a
 function scheduleBackup(now){if(!localStorage.gOn||!stateTrusted)return;clearTimeout(bkT);bkT=setTimeout(backup,now?100:5000)}
 async function backup(){if(!stateTrusted)return;if(backing)return scheduleBackup();backing=true;try{
   const fs=await dList(),by=Object.fromEntries(fs.map(f=>[f.name,f.id]));
-  for(const t of liveItems())for(const a of t.att||[])if(!by['att_'+a.id]){const b=await idb('get',a.id);if(b)await dPut('att_'+a.id,b)}
+  for(const t of liveItems())for(const a of t.att||[])if(!by['att_'+a.id]){const b=await getAtt(a.id);if(b)await dPut('att_'+a.id,b)}
   const st=fs.find(f=>f.name=='state.json');let remote=null;
   if(st){const d=await (await gfetch(DQ+'/'+st.id+'?alt=media')).json();remote=normalizeState(d);if(!remote)throw new Error('bad remote')}
   const local={items:liveItems(),tombstones:tombstones.slice()};
@@ -494,7 +538,8 @@ function openAcc(){supA.href=`mailto:${SUPPORT_EMAIL}?subject=${encodeURICompone
 function onbDone(){localStorage.onb=1;onb.style.display='none';setTimeout(permsOnboarding,400)}
 
 // ===== native attachments (Capacitor Camera / FilePicker), web fallback = <input type=file>
-async function storeBlob(blob,name){const id='a'+Date.now()+Math.random().toString(36).slice(2,6);await idb('put',blob,id);draftAtt.push({id,name,type:blob.type||'application/octet-stream'})}
+async function storeBlob(blob,name){const id='a'+Date.now()+Math.random().toString(36).slice(2,6);await idb('put',blob,id);try{if(NATIVE&&PL.Filesystem)await PL.Filesystem.writeFile({path:'rk/att/'+id,data:b64(await blob.arrayBuffer()),directory:'DATA',recursive:true})}catch(e){}draftAtt.push({id,name,type:blob.type||'application/octet-stream'})}
+async function getAtt(id){try{const b=await idb('get',id);if(b)return b}catch(e){}if(!(NATIVE&&PL.Filesystem))return null;try{const r=await PL.Filesystem.readFile({path:'rk/att/'+id,directory:'DATA'});if(!r||!r.data)return null;return b64blob(String(r.data).replace(/^data:[^,]*,/,''),'application/octet-stream')}catch(e){return null}}
 const b64blob=(b,type)=>new Blob([unb64(b)],{type});
 function cameraParts(format){const f=String(format||'jpeg').toLowerCase().replace('jpg','jpeg');if(f==='png')return {type:'image/png',ext:'png'};if(f==='gif')return {type:'image/gif',ext:'gif'};return {type:'image/jpeg',ext:'jpg'}}
 function writePhotoPending(){
@@ -514,6 +559,7 @@ async function ingestPhoto(r, taskId){
   const parts=cameraParts(r.format);
   const att={id:'a'+Date.now()+Math.random().toString(36).slice(2,6),name:'photo_'+Date.now()+'.'+parts.ext,type:parts.type};
   await idb('put',b64blob(b64s,parts.type),att.id);
+  try{if(NATIVE&&PL.Filesystem)await PL.Filesystem.writeFile({path:'rk/att/'+att.id,data:b64s,directory:'DATA',recursive:true})}catch(e){}
   lastIngestSig=sig;
   const cur=byId(taskId);
   if(!cur)return false;
@@ -540,28 +586,75 @@ async function finishPhotoRestore(){
   if(!plan||plan.action==='none'||plan.action==='wait'||plan.action==='drop')return;
   if(plan.action==='attach'&&plan.create){const t=taskFromSession(session);if(t&&!byId(t.id))I.push(t)}
   if((plan.action==='attach'||plan.action==='reopen')&&byId(plan.taskId))revealTask(plan.taskId);
-  if(plan.action==='attach'&&buf.ok)await ingestPhoto({base64String:buf.base64String,format:buf.format},plan.taskId);
+  if(plan.action==='attach'&&buf.ok){
+    let payload={base64String:buf.base64String,format:buf.format};
+    if(!payload.base64String){const bytes=await readPhotoResult(buf);if(!bytes||!bytes.b64)return;payload={base64String:bytes.b64,format:bytes.format}}
+    await ingestPhoto(payload,plan.taskId);
+  }
 }
 function queuePhotoRestore(){photoRestoreBusy=(photoRestoreBusy||Promise.resolve()).then(()=>finishPhotoRestore()).catch(e=>console.warn('photo restore',e));return photoRestoreBusy}
-async function addPhoto(){
+async function readPhotoResult(r){
+  const n=normalizePhotoResult(r);
+  if(!n)return null;
+  if(n.base64String)return {b64:n.base64String,format:n.format};
+  const url=n.webPath||n.path;
+  if(NATIVE&&PL.Filesystem&&n.path){
+    try{
+      const opt={path:n.path};
+      if(!/^(file|content):/i.test(n.path)&&n.path.charAt(0)!=='/')opt.directory='CACHE';
+      const f=await PL.Filesystem.readFile(opt);
+      if(f&&f.data)return {b64:String(f.data).replace(/^data:[^,]*,/,''),format:n.format};
+    }catch(e){}
+  }
+  if(!url)return null;
+  try{const res=await fetch(url);if(!res.ok)return null;return {b64:b64(await res.arrayBuffer()),format:n.format}}catch(e){return null}
+}
+async function addPhoto(which){
   if(editId==null)return;
+  const source=captureSource(which);
   armCapture();
-  if(!NATIVE||!PL.Camera){cap.click();setTimeout(()=>{if(!document.hidden){sheetHold.capture=false;clearPhotoPending()}},120000);return}
+  if(!NATIVE||!PL.Camera){(source==='CAMERA'?cap:gal).click();setTimeout(()=>{if(!document.hidden){sheetHold.capture=false;clearPhotoPending()}},120000);return}
   try{
-    if(!await ensurePerms('camera')){clearPhotoPending();return}
-    const r=await PL.Camera.getPhoto({resultType:'base64',source:'PROMPT',quality:80,width:2000,correctOrientation:true,promptLabelHeader:'הוספת תמונה',promptLabelPhoto:'מהגלריה',promptLabelPicture:'צלם',promptLabelCancel:'ביטול'});
-    await ingestPhoto(r,editId);
+    if(source==='CAMERA'&&!await ensurePerms('camera')){clearPhotoPending();return}
+    let r=null;
+    const Ran=ranPlugin();
+    if(Ran&&Ran.capture){
+      try{r=await Ran.capture({source:source==='CAMERA'?'camera':'photos',quality:80,width:2000})}
+      catch(e){const msg=String((e&&e.message)||e||'');if(/cancel/i.test(msg))throw e;r=null}
+    }
+    if(!normalizePhotoResult(r)){
+      r=await PL.Camera.getPhoto({resultType:'base64',source:source,quality:80,width:2000,correctOrientation:true,promptLabelHeader:'הוספת תמונה',promptLabelPhoto:'מהגלריה',promptLabelPicture:'צלם',promptLabelCancel:'ביטול'});
+    }
+    const bytes=await readPhotoResult(r);
+    if(!bytes||!bytes.b64){toast('לא ניתן להוסיף תמונה',1);clearPhotoPending();return}
+    const ok=await ingestPhoto({base64String:bytes.b64,format:bytes.format},editId);
+    if(!ok)toast('לא ניתן להוסיף תמונה',1);
     clearPhotoPending();
   }catch(e){clearPhotoPending();const msg=String((e&&e.message)||e||'');if(!/cancel/i.test(msg))toast('לא ניתן להוסיף תמונה',1)}
   finally{sheetHold.capture=false;reopenHeldSheet()}
 }
 async function addFile(){
-  if(editId==null&&(NATIVE&&PL.FilePicker))return;
+  if(editId==null)return;
   armCapture();
-  if(!NATIVE||!PL.FilePicker){upl.click();setTimeout(()=>{if(!document.hidden){sheetHold.capture=false;clearPhotoPending()}},120000);return}
+  const Ran=ranPlugin();
+  if(!NATIVE||(!PL.FilePicker&&!(Ran&&Ran.capture))){upl.click();setTimeout(()=>{if(!document.hidden){sheetHold.capture=false;clearPhotoPending()}},120000);return}
   try{
-    const r=await PL.FilePicker.pickFiles({readData:true,limit:0});
-    for(const file of r.files)await storeBlob(b64blob(file.data,file.mimeType),file.name);
+    let files=null;
+    if(Ran&&Ran.capture){
+      try{const r=await Ran.capture({source:'file',quality:80,width:2000});files=r&&r.files}catch(e){const msg=String((e&&e.message)||e||'');if(/cancel/i.test(msg))throw e}
+    }
+    if(!files&&PL.FilePicker){
+      const r=await PL.FilePicker.pickFiles({readData:true,limit:0});
+      files=[];
+      for(const file of (r&&r.files)||[]){
+        let data=file.data;
+        if(!data&&(file.path||file.webPath)){const bytes=await readPhotoResult({path:file.path,webPath:file.webPath,format:'jpeg'});if(bytes)data=bytes.b64}
+        if(data)files.push({data,name:file.name,mimeType:file.mimeType});
+      }
+    }
+    let n=0;
+    for(const file of files||[]){if(!file||!file.data)continue;await storeBlob(b64blob(file.data,file.mimeType||file.mime||'application/octet-stream'),file.name||'file');n++}
+    if(!n){toast('לא ניתן לצרף קובץ',1);clearPhotoPending();return}
     renderAtts();changed();clearPhotoPending();
   }catch(e){clearPhotoPending();const msg=String((e&&e.message)||e||'');if(!/cancel/i.test(msg))toast('לא ניתן לצרף קובץ',1)}
   finally{sheetHold.capture=false;reopenHeldSheet()}
@@ -569,20 +662,44 @@ async function addFile(){
 cap.addEventListener('cancel',()=>{if(NATIVE&&PL.Camera)return;sheetHold.capture=false;clearPhotoPending();reopenHeldSheet()});
 upl.addEventListener('cancel',()=>{if(NATIVE&&PL.FilePicker)return;sheetHold.capture=false;clearPhotoPending();reopenHeldSheet()});
 // ===== contacts
-async function pickContact(){if(!NATIVE||!PL.Contacts){toast('בחירת איש קשר זמינה באפליקציה',1);return}
+function whenResumed(){if(!document.hidden)return new Promise(r=>setTimeout(r,80));return new Promise(res=>{let done=false;const finish=()=>{if(done)return;done=true;document.removeEventListener('visibilitychange',on);res()};const on=()=>{if(!document.hidden)finish()};document.addEventListener('visibilitychange',on);setTimeout(finish,1600)})}
+async function pickContact(){if(!NATIVE){toast('בחירת איש קשר זמינה באפליקציה',1);return}
  sheetHold.capture=true;sheetWanted=true;
  try{if(!await ensurePerms('contacts')){toast('אין הרשאה לאנשי קשר',1);return}
- const c=(await PL.Contacts.pickContact({projection:{name:true,phones:true}})).contact;const ph=c&&c.phones&&c.phones[0]&&c.phones[0].number;
- if(ph)f.phone.value=ph;if(!f.name.value.trim()&&c.name&&c.name.display)f.name.value=c.name.display;changed()}catch(e){}
+  await whenResumed();
+  let c=null;const Ran=ranPlugin();
+  if(Ran&&Ran.pickContact){try{c=(await Ran.pickContact()).contact}catch(e){const msg=String((e&&e.message)||e||'');if(/cancel/i.test(msg))return;c=null}}
+  if(!c&&PL.Contacts&&PL.Contacts.pickContact){try{c=(await PL.Contacts.pickContact({projection:{name:true,phones:true}})).contact}catch(e){const msg=String((e&&e.message)||e||'');if(/cancel/i.test(msg))return}}
+  const ph=c&&c.phones&&c.phones[0]&&c.phones[0].number;
+  if(!c||(!ph&&!(c.name&&c.name.display))){toast('לא ניתן לפתוח אנשי קשר',1);return}
+  if(ph)f.phone.value=ph;if(!f.name.value.trim()&&c.name&&c.name.display)f.name.value=c.name.display;changed()}catch(e){const msg=String((e&&e.message)||e||'');if(msg&&!/cancel/i.test(msg))toast('לא ניתן לפתוח אנשי קשר',1)}
  finally{sheetHold.capture=false;reopenHeldSheet()}}
 // ===== address autocomplete (pluggable provider; default Photon/OSM, free)
 const ADDR={photon:{async suggest(q){const r=await fetch('https://photon.komoot.io/api/?limit=5&lat=32.08&lon=34.83&bbox=34.2,29.4,35.95,33.4&q='+encodeURIComponent(q));const j=await r.json();
  return j.features.map(f=>{const p=f.properties,st=[p.street||p.name,p.housenumber].filter(Boolean).join(' '),city=p.city||p.town||p.village||p.county||'';return{label:[st,city].filter(Boolean).join(', '),sub:p.name&&p.street?p.name:'',ll:[f.geometry.coordinates[1],f.geometry.coordinates[0]]}}).filter(x=>x.label).map(x=>{const n=(q.match(/\d+/)||[])[0];if(n&&!/\d/.test(x.label.split(',')[0]))x.label=x.label.replace(/^([^,]+)/,'$1 '+n);return x}).filter((x,i,a)=>a.findIndex(y=>y.label==x.label)==i)}},
  // google:{async suggest(q){/* Places Autocomplete (New) with GOOGLE_PLACES_KEY */}}
-};let ADDR_PROVIDER='photon',sugT;
-f.address.addEventListener('input',()=>{clearTimeout(sugT);const q=f.address.value.trim();if(q.length<3){sug.classList.remove('on');return}sugT=setTimeout(async()=>{try{const L=await ADDR[ADDR_PROVIDER].suggest(q);if(f.address.value.trim()!==q)return;
- sug.innerHTML=L.map((s,i)=>`<div data-i="${i}">${esc(s.label)}${s.sub?`<small>${esc(s.sub)}</small>`:''}</div>`).join('');sug.classList.toggle('on',L.length>0);sug.querySelectorAll('div').forEach(d=>d.onclick=()=>{const s=L[d.dataset.i];f.address.value=s.label;draftLL=s.ll;sug.classList.remove('on');links();changed()})}catch(e){}},350)});
-f.address.addEventListener('blur',()=>setTimeout(()=>sug.classList.remove('on'),200));
+};let ADDR_PROVIDER='photon',sugT,sugPick=0,pickedLabel=null;
+function chooseSuggestion(s,ev){
+  if(ev){ev.preventDefault();ev.stopPropagation()}
+  const next=commitSuggestion(s&&s.label);
+  sugPick=Date.now();pickedLabel=next.value;
+  f.address.value=next.value;draftLL=(s&&s.ll)||null;
+  sug.classList.remove('on');sug.innerHTML='';
+  try{f.address.setSelectionRange(next.value.length,next.value.length)}catch(e){}
+  links();changed();
+  setTimeout(()=>{if(pickedLabel!=null&&f.address.value!==pickedLabel&&Date.now()-sugPick<450){f.address.value=pickedLabel;links();changed()}},0);
+}
+f.address.addEventListener('input',()=>{
+  if(pickedLabel!=null&&Date.now()-sugPick<450){const keep=stickySuggestionValue(f.address.value,pickedLabel,Date.now()-sugPick);if(f.address.value!==keep)f.address.value=keep;return}
+  pickedLabel=null;
+  clearTimeout(sugT);const q=f.address.value.trim();if(q.length<3){sug.classList.remove('on');return}
+  sugT=setTimeout(async()=>{try{const L=await ADDR[ADDR_PROVIDER].suggest(q);if(f.address.value.trim()!==q||(pickedLabel!=null&&Date.now()-sugPick<450))return;
+    sug.innerHTML=L.map((s,i)=>`<div data-i="${i}">${esc(s.label)}${s.sub?`<small>${esc(s.sub)}</small>`:''}</div>`).join('');
+    sug.classList.toggle('on',L.length>0);
+    sug.querySelectorAll('div').forEach(d=>{const pick=ev=>chooseSuggestion(L[+d.dataset.i],ev);d.addEventListener('pointerdown',pick);d.addEventListener('mousedown',pick)});
+  }catch(e){}},350);
+});
+f.address.addEventListener('blur',()=>setTimeout(()=>{if(Date.now()-sugPick>300)sug.classList.remove('on')},200));
 // ===== pinch to scale UI =====
 (function(){let z=+localStorage.uiZ||1,d0=0,z0=1,raf;const set=v=>{z=Math.min(1.6,Math.max(.8,v));if(!raf)raf=requestAnimationFrame(()=>{raf=0;document.documentElement.style.setProperty('--z',z.toFixed(3))})};set(z);
  const dist=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
@@ -591,8 +708,8 @@ f.address.addEventListener('blur',()=>setTimeout(()=>sug.classList.remove('on'),
  document.addEventListener('touchend',e=>{if(d0&&e.touches.length<2){d0=0;localStorage.uiZ=z.toFixed(3);go(curPage,1)}},{capture:true});
  document.addEventListener('gesturestart',e=>e.preventDefault())})();
 // ---- history / undo
-const H=[];function act(label,fn){H.push(JSON.stringify(I));if(H.length>60)H.shift();fn();save();draw();toast(label)}
-function undo(){if(!H.length)return;const nx=JSON.parse(H.pop()),ids=new Set(nx.map(t=>t.id));for(const t of I)if(!ids.has(t.id)&&!t.fresh&&(t.name||t.phone||t.address||t.notes||(t.att||[]).length))nx.unshift({...t,prev:t.page=='trash'?t.prev:t.page,page:'trash'});I=nx;save();draw();toast('בוטל',1)}
+const H=[];function act(label,fn){H.push(JSON.stringify(I));if(H.length>60)H.shift();fn();save();draw();toast(label);syncReminders()}
+function undo(){if(!H.length)return;const nx=JSON.parse(H.pop()),ids=new Set(nx.map(t=>t.id));for(const t of I)if(!ids.has(t.id)&&!t.fresh&&(t.name||t.phone||t.address||t.notes||(t.att||[]).length))nx.unshift({...t,prev:t.page=='trash'?t.prev:t.page,page:'trash'});I=nx;save();draw();toast('בוטל',1);syncReminders()}
 let tT;function toast(s,noUndo){tmsg.textContent=s;toastEl().querySelector('button').style.display=noUndo||!H.length?'none':'';toastEl().classList.add('on');clearTimeout(tT);const el=toastEl();el.classList.toggle('quick',s=='נשמר');tT=setTimeout(()=>el.classList.remove('on'),s=='נשמר'?1500:3000)}
 const toastEl=()=>document.getElementById('toast');
 // ---- render
@@ -601,23 +718,27 @@ let curPage=2,editId=null,dragging=false;
 function card(t){const a=t.att||[],img=a.filter(x=>/^image/.test(x.type)).length,fl=a.length-img;
 return `<li class="it${/\?/.test(t.name+t.address)?' unc':''}" data-id="${t.id}"><b>${esc(t.name)}</b><div class="meta">${t.address||t.ll?`<span>${esc(t.address||'מיקום נוכחי')}</span>`:''}${t.phone?`<a href="tel:${esc(t.phone)}" onclick="event.stopPropagation()">${esc(t.phone)}</a>`:''}</div>${t.notes||img||fl||t.ll||t.when?`<div class="ind">${t.when?`<i class="cal">⏰ ${fmtD(t.when.slice(0,10))} · ${t.when.slice(11)}</i>`:''}${t.notes?'<i>📝 הערה</i>':''}${img?`<i>📷 ${img}</i>`:''}${fl?`<i>📎 ${fl}</i>`:''}${t.ll?'<i>📍</i>':''}</div>`:''}</li>`}
 function draw(){const s=pages.scrollLeft;pages.innerHTML=P.map(([k])=>{const l=I.filter(t=>t.page==k);return `<section class="page"><ul class="list" data-p="${k}">${l.map(card).join('')}</ul>${l.length?'':`<div class="empty"><div class="ei">${EI[k]}</div><b>${ET[k][0]}</b><span>${ET[k][1]}</span></div>`}</section>`}).join('');pages.scrollLeft=s;
-document.querySelectorAll('.list').forEach(el=>Sortable.create(el,{group:'items',animation:250,easing:'cubic-bezier(.2,.8,.2,1)',delay:380,delayOnTouchOnly:true,touchStartThreshold:8,ghostClass:'ghost',chosenClass:'chosen',forceFallback:true,scroll:false,fallbackTolerance:4,
- onStart:()=>{dragging=true;dragX0=lastTX;startPage=curPage;H.push(JSON.stringify(I));navigator.vibrate&&navigator.vibrate(15)},onEnd:e=>{dragging=false;hintEl.classList.remove('on');const tgt=P[curPage][0];
+document.querySelectorAll('.list').forEach(el=>Sortable.create(el,{group:'items',animation:250,easing:'cubic-bezier(.2,.8,.2,1)',delay:380,delayOnTouchOnly:true,touchStartThreshold:800,ghostClass:'ghost',chosenClass:'chosen',forceFallback:true,scroll:false,fallbackTolerance:8,
+ onChoose:()=>pages.classList.add('draglock'),
+ onStart:()=>{dragging=true;pages.classList.add('draglock');dragX0=lastTX;startPage=curPage;H.push(JSON.stringify(I));navigator.vibrate&&navigator.vibrate(15)},onEnd:e=>{dragging=false;pages.classList.remove('draglock');hintEl.classList.remove('on');const tgt=P[curPage][0];
   if(e.to.dataset.p!==tgt){const l=document.querySelector(`.list[data-p="${tgt}"]`);l.insertBefore(e.item,l.firstChild)}const fp=P[startPage][0];
   if(fp===tgt&&e.from===e.to&&e.oldIndex===e.newIndex){H.pop();return}
   syncDom(fp===tgt?'הסדר עודכן':tgt=='trash'?'הועבר לזבל':fp=='trash'?'שוחזר ל'+pn(tgt):'הועבר ל'+pn(tgt))}}));
-document.querySelectorAll('.it').forEach(li=>li.onclick=()=>{if(!dragging)edit(li.dataset.id)});dt()}
-function syncDom(msg){const o=[];document.querySelectorAll('.list').forEach(l=>l.querySelectorAll('.it').forEach(li=>{const t=byId(li.dataset.id);if(l.dataset.p=='trash'&&t.page!='trash')t.prev=t.page;t.page=l.dataset.p;o.push(t)}));for(const t of I)if(!o.includes(t))o.push(t);I=o;save();setTimeout(draw,0);toast(msg)}
+document.querySelectorAll('.it').forEach(li=>li.onclick=()=>{if(!dragging&&!suppressClick)edit(li.dataset.id)});dt()}
+function syncDom(msg){const o=[];document.querySelectorAll('.list').forEach(l=>l.querySelectorAll('.it').forEach(li=>{const t=byId(li.dataset.id);if(l.dataset.p=='trash'&&t.page!='trash')t.prev=t.page;t.page=l.dataset.p;o.push(t)}));for(const t of I)if(!o.includes(t))o.push(t);I=o;save();setTimeout(draw,0);toast(msg);syncReminders()}
 function dt(){const n=Math.round(Math.abs(pages.scrollLeft)/pages.clientWidth);if(!isNaN(n))curPage=n;const c=k=>I.filter(t=>t.page==k).length;
 dots.innerHTML=P.map((p,j)=>`<i class="${j==curPage?'on':''}"></i>`).join('');tabs.innerHTML=P.map(([k,n],j)=>`<button class="${j==curPage?'on':''}" onclick="go(${j})">${n}<span>${c(k)}</span></button>`).join('');fab.style.display=curPage==3?'none':'';ttl.textContent=P[curPage][1];undoB.disabled=!H.length}
 function go(j,inst){pages.children[j]&&pages.children[j].scrollIntoView({behavior:inst?'auto':'smooth',inline:'center',block:'nearest'})}
 // long-press drag to screen edge -> flip page (RTL: right edge = previous page)
 // long-press drag sideways past ~30% width -> flip to adjacent page (RTL: finger left = next page)
-let dragX0=null,startPage=0,lastTX=null;document.addEventListener('touchstart',e=>{lastTX=e.touches[0].clientX},{passive:true,capture:true});const hintEl=document.getElementById('dhint');
+let dragX0=null,startPage=0,lastTX=null,suppressClick=false,cardHold=null;document.addEventListener('touchstart',e=>{lastTX=e.touches[0].clientX;const li=e.target.closest&&e.target.closest('.it');if(!li||!pages.contains(li)){cardHold=null;return}const t=e.touches[0];cardHold={x:t.clientX,y:t.clientY,t:Date.now(),mode:'wait'}},{passive:true,capture:true});const hintEl=document.getElementById('dhint');
 function dragMove(x){if(!dragging)return;if(dragX0==null)dragX0=x;const dx=x-dragX0,n=curPage+(dx<0?1:-1),ok=n>=0&&n<P.length,pr=Math.min(1,Math.abs(dx)/(innerWidth*.3));
  if(!ok||Math.abs(dx)<12){hintEl.classList.remove('on');return}hintEl.textContent=(dx<0?'← ':'')+pn(P[n][0])+(dx>0?' →':'');hintEl.classList.add('on');hintEl.style.setProperty('--p',pr);hintEl.classList.toggle('go',pr>=1);
  if(pr>=1){go(n,1);curPage=n;dt();dragX0=x;navigator.vibrate&&navigator.vibrate(20)}}
-document.addEventListener('touchmove',e=>dragMove(e.touches[0].clientX),{passive:true,capture:true});document.addEventListener('pointermove',e=>{if(e.pointerType!='touch')dragMove(e.clientX)},{capture:true});
+document.addEventListener('touchmove',e=>{if(e.touches[0])dragMove(e.touches[0].clientX);if(!cardHold||!e.touches[0])return;const t=e.touches[0],dx=t.clientX-cardHold.x,dy=t.clientY-cardHold.y;const kind=classifyCardGesture(Date.now()-cardHold.t,dx,dy);if(cardHold.mode==='scroll')return;if(kind==='scroll'){cardHold.mode='scroll';return}if(kind==='drag'||dragging){cardHold.mode='drag';pages.classList.add('draglock');e.preventDefault();return}if(Math.abs(dx)>=Math.abs(dy))e.preventDefault()},{passive:false,capture:true});
+document.addEventListener('touchend',e=>{const h=cardHold;cardHold=null;if(!h||h.mode==='scroll'||h.mode==='drag'||dragging)return;const t=e.changedTouches&&e.changedTouches[0];if(!t)return;const dx=t.clientX-h.x,dy=t.clientY-h.y;if(classifyCardGesture(Date.now()-h.t,dx,dy)!=='swipe')return;suppressClick=true;setTimeout(()=>suppressClick=false,400);const n=curPage+swipePageDelta(dx);if(n>=0&&n<P.length)go(n)},{capture:true});
+document.addEventListener('touchcancel',()=>{cardHold=null;if(!dragging)pages.classList.remove('draglock')},{capture:true});
+document.addEventListener('pointermove',e=>{if(e.pointerType!='touch')dragMove(e.clientX)},{capture:true});
 document.addEventListener('contextmenu',e=>{if(!e.target.closest('input,textarea'))e.preventDefault()});
 // close dialogs on backdrop tap
 document.querySelectorAll('dialog').forEach(d=>d.addEventListener('click',e=>{if(e.target!==d)return;if(d===dlg&&onDialogCancel(liveHold())==='prevent')return;d.close()}));
@@ -644,12 +765,12 @@ dlg.addEventListener('close',()=>{
   sess=null;sheetWanted=false;
 });
 function links(){const a=f.address.value.trim(),q=draftLL?draftLL.join(','):a;lw.style.display=lg.style.display=q?'':'none';lw.href=draftLL?`https://waze.com/ul?ll=${q}&navigate=yes`:`https://waze.com/ul?q=${encodeURIComponent(a)}&navigate=yes`;lg.href='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q)}
-f.address.addEventListener('input',()=>{draftLL=null;links()});
+f.address.addEventListener('input',()=>{if(pickedLabel!=null&&Date.now()-sugPick<450)return;draftLL=null;links()});
 function here(){if(!navigator.geolocation)return alert('אין גישה למיקום');const prev=sheetHold.perm;sheetHold.perm=true;sheetWanted=true;const done=()=>{sheetHold.perm=prev;reopenHeldSheet()};navigator.geolocation.getCurrentPosition(p=>{done();draftLL=[+p.coords.latitude.toFixed(6),+p.coords.longitude.toFixed(6)];if(!f.address.value)f.address.value='מיקום נוכחי';links();changed()},()=>{done();alert('לא ניתן לקבל מיקום')},{enableHighAccuracy:true,timeout:10000})}
 async function addAtt(inp){sheetHold.capture=true;sheetWanted=true;try{for(const file of inp.files){const id='a'+Date.now()+Math.random().toString(36).slice(2,6);await idb('put',file,id);draftAtt.push({id,name:file.name,type:file.type})}inp.value='';renderAtts();changed()}finally{sheetHold.capture=false;clearPhotoPending();reopenHeldSheet()}}
 let attGen=0;
 async function renderAtts(){const gen=++attGen,list=draftAtt.slice();atts.innerHTML='';for(const a of list){if(gen!==attGen)return;const d=document.createElement('div');d.className='att';d.innerHTML=`<button type="button">✕</button>${esc(a.name)}`;d.querySelector('button').onclick=e=>{e.stopPropagation();draftAtt=draftAtt.filter(x=>x!==a);renderAtts();changed()};
-const b=await idb('get',a.id);if(gen!==attGen)return;if(b){const u=URL.createObjectURL(b);if(/^image/.test(a.type)){const im=new Image();im.src=u;d.appendChild(im)}d.onclick=()=>open(u,'_blank')}atts.appendChild(d)}}
+const b=await getAtt(a.id);if(gen!==attGen)return;if(b){const u=URL.createObjectURL(b);if(/^image/.test(a.type)){const im=new Image();im.src=u;d.appendChild(im)}d.onclick=()=>open(u,'_blank')}atts.appendChild(d)}}
 // swipe-down to close: anywhere on the sheet or backdrop
 (function(){let y0=null,x0,dy=0,t0,on=false,tgt;
 dlg.addEventListener('touchstart',e=>{const t=e.touches[0];y0=t.clientY;x0=t.clientX;dy=0;on=false;t0=Date.now();tgt=e.target},{passive:true});
@@ -674,8 +795,12 @@ function remSave(w){const id=calId;cal.close();if(w&&new Date(w)<=new Date()){to
  act(w?'⏰ תזכורת ל'+fmtW(w):'התזכורת הוסרה',()=>{const t=byId(id);if(w)t.when=w;else delete t.when});syncReminders()}
 // ===== local notifications
 const LN=PL.LocalNotifications,nid=s=>{let h=7;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return Math.abs(h)%2000000000+1};
-async function syncReminders(){if(!NATIVE||!LN)return;try{const p=await LN.getPending();if(p.notifications.length)await LN.cancel({notifications:p.notifications.map(n=>({id:n.id}))});
- const now=Date.now(),list=I.filter(t=>t.when&&t.page!='trash'&&new Date(t.when)>now).map(t=>({id:nid(t.id),title:'⏰ '+(t.name||'תזכורת'),body:[t.address,t.phone].filter(Boolean).join(' · ')||'הקש לפתיחה',
+async function syncReminders(){if(!NATIVE||!LN)return;try{const now=Date.now(),want=new Set(reminderIds(I,now));const cancel=[];
+ try{const p=await LN.getPending();for(const n of (p.notifications||[]))cancel.push({id:n.id})}catch(e){}
+ for(const t of I)if(t&&t.id!=null)cancel.push({id:nid(t.id)});
+ const seen=new Set(),uniq=cancel.filter(n=>{if(seen.has(n.id))return false;seen.add(n.id);return true});
+ if(uniq.length)await LN.cancel({notifications:uniq});
+ const list=I.filter(t=>t&&want.has(String(t.id))).map(t=>({id:nid(t.id),title:'⏰ '+(t.name||'תזכורת'),body:[t.address,t.phone].filter(Boolean).join(' · ')||'הקש לפתיחה',
   schedule:{at:new Date(t.when),allowWhileIdle:true},actionTypeId:'REM',channelId:'rem',extra:{tid:t.id}}));if(list.length)await LN.schedule({notifications:list})}catch(e){console.warn('notif',e)}}
 async function initNotifs(){if(!NATIVE||!LN)return;try{await LN.createChannel({id:'rem',name:'תזכורות',importance:5,vibration:true});}catch(e){}
  await LN.registerActionTypes({types:[{id:'REM',actions:[{id:'s10',title:'נודניק 10 דק׳'},{id:'s60',title:'נודניק שעה'},{id:'done',title:'בוצע'}]}]});
@@ -696,24 +821,24 @@ async function ensurePerms(which){if(!NATIVE)return true;const seen=JSON.parse(l
  try{if(which=='notif'&&LN){let s=await LN.checkPermissions();if(s.display!='granted'){if(!seen.notif&&!await explain('notif'))return false;seen.notif=1;s=await LN.requestPermissions()}
    try{const ex=await LN.checkExactNotificationSetting();if(ex.exact_alarm!='granted'&&!seen.exact){seen.exact=1;localStorage.permSeen=JSON.stringify(seen);if(await explain('notif','לתזכורות מדויקות יש לאשר "שעונים מעוררים ותזכורות" במסך הבא.'))await LN.changeExactNotificationSetting()}}catch(e){}
    localStorage.permSeen=JSON.stringify(seen);return s.display=='granted'}
-  if(which=='camera'&&PL.Camera){const s=await PL.Camera.checkPermissions();if(s.camera!='granted'){if(!seen.camera&&!await explain('camera'))return false;seen.camera=1;localStorage.permSeen=JSON.stringify(seen);await PL.Camera.requestPermissions({permissions:['camera','photos']})}return true}
+  if(which=='camera'&&PL.Camera){const s=await PL.Camera.checkPermissions();if(s.camera!='granted'){if(!seen.camera&&!await explain('camera'))return false;seen.camera=1;localStorage.permSeen=JSON.stringify(seen);await PL.Camera.requestPermissions({permissions:['camera']})}return true}
   if(which=='contacts'&&PL.Contacts){const s=await PL.Contacts.checkPermissions();if(s.contacts!='granted'){if(!seen.contacts&&!await explain('contacts'))return false;seen.contacts=1;localStorage.permSeen=JSON.stringify(seen);return (await PL.Contacts.requestPermissions()).contacts=='granted'}return true}}catch(e){console.warn(e);return true}finally{sheetHold.perm=prevPerm;reopenHeldSheet()}}
 function explain(k,extra){if(dlg.open||suspendReopen)return Promise.resolve(true);return new Promise(r=>{pmt.textContent=PERM_TXT[k][0];pmx.textContent=extra||PERM_TXT[k][1];let done=false;const finish=v=>{if(done)return;done=true;r(!!v)};pmok.onclick=()=>{finish(true);try{pmd.close()}catch(e){}};pmd.addEventListener('close',()=>finish(false),{once:true});if(!openSheet(pmd))finish(true)})}
 async function permsOnboarding(){if(!NATIVE||localStorage.permOnb)return;localStorage.permOnb=1;await ensurePerms('notif')}
 
 function sheetMove(k){const id=editId;dlg.close();mvTo(id,k)}
 function restore(){const id=editId,k=byId(id).prev||'work';dlg.close();act('שוחזר ל'+pn(k),()=>{const t=byId(id);t.page=k;I=I.filter(x=>x!==t);I.unshift(t)})}
-function delForever(){const t0=byId(editId);if(!t0||t0.page!='trash')return;if(!confirm('למחוק לצמיתות?'))return;const id=editId;dlg.close();act('נמחק לצמיתות',()=>I=I.filter(x=>!(x.id==id&&x.page=='trash')))}
+function delForever(){const t0=byId(editId);if(!t0||t0.page!='trash')return;if(!confirm('למחוק לצמיתות?'))return;const id=editId,alarm=nid(id);dlg.close();act('נמחק לצמיתות',()=>I=I.filter(x=>!(x.id==id&&x.page=='trash')));if(NATIVE&&LN)LN.cancel({notifications:[{id:alarm}]}).catch(()=>{})}
 // ---- WhatsApp share
 function waText(t){const L=['*'+t.name+'*'];const q=t.ll?t.ll.join(','):t.address;
 if(t.address||t.ll)L.push('📍 '+(t.address||'מיקום')+'\n'+'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q));
 if(t.phone)L.push('📞 '+t.phone);if(t.when){const d=new Date(t.when);L.push('📅 '+d.toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'})+' בשעה '+t.when.slice(11))}
 if(t.notes)L.push('📝 '+t.notes);return L.join('\n\n')}
 async function shareWA(id){sheetHold.capture=true;sheetWanted=true;try{const t=byId(id),text=waText(t),imgs=(t.att||[]).filter(a=>/^image/.test(a.type));
- if(NATIVE&&PL.Share&&PL.Filesystem){try{const files=[];for(const a of t.att||[]){const b=await idb('get',a.id);if(!b)continue;const d=b64(await b.arrayBuffer()),nm=(a.id+'_'+(a.name||'file')).replace(/[^\w.\-]/g,'_');
+ if(NATIVE&&PL.Share&&PL.Filesystem){try{const files=[];for(const a of t.att||[]){const b=await getAtt(a.id);if(!b)continue;const d=b64(await b.arrayBuffer()),nm=(a.id+'_'+(a.name||'file')).replace(/[^\w.\-]/g,'_');
    files.push((await PL.Filesystem.writeFile({path:'share/'+nm,data:d,directory:'CACHE',recursive:true})).uri)}
    await PL.Share.share({title:t.name,text,files:files.length?files:undefined,dialogTitle:'שיתוף'});return}catch(e){if(/cancel/i.test(e.message||''))return}}
- if(navigator.share){try{const files=[];for(const a of imgs){const b=await idb('get',a.id);if(b)files.push(new File([b],a.name||'photo.jpg',{type:a.type}))}
+ if(navigator.share){try{const files=[];for(const a of imgs){const b=await getAtt(a.id);if(b)files.push(new File([b],a.name||'photo.jpg',{type:a.type}))}
   const d={text};if(files.length&&navigator.canShare&&navigator.canShare({files}))d.files=files;await navigator.share(d);return}catch(e){if(e.name=='AbortError')return}}
  open('https://wa.me/?text='+encodeURIComponent(text),'_blank')}finally{sheetHold.capture=false;reopenHeldSheet()}}
 // ---- install prompt (once)

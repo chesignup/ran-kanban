@@ -1,4 +1,4 @@
-# ON-DEVICE ACCEPTANCE — Device: __________ | Build **0.1.7** (versionCode **8**) | Date: __________ | **PASS** / **FAIL**
+# ON-DEVICE ACCEPTANCE — Device: __________ | Build **0.1.8** (versionCode **9**) | Date: __________ | **PASS** / **FAIL**
 
 Install package `il.co.karisi.ran` on a physical Android device (Hebrew UI, RTL). Check each item; record failures with steps and screenshots.
 
@@ -25,9 +25,10 @@ Install package `il.co.karisi.ran` on a physical Android device (Hebrew UI, RTL)
 
 ## 3. Long-press drag between pages and reorder
 
-- [ ] Long-press a card ~0.4 s, drag sideways (RTL: toward **left** for “next” page). **Expected:** Hint chip shows destination page name.
+- [ ] Long-press a card ~0.4 s, then drag sideways (RTL: toward **left** for “next” page). **Expected:** The board does **not** change page under the finger. Hint chip shows the destination page name.
 - [ ] Release on another page. **Expected:** Task moves; card appears on target page.
 - [ ] Long-press and drag vertically within one page. **Expected:** Card reorders among siblings on that page.
+- [ ] Quick horizontal swipe on a card (no hold). **Expected:** Page changes; the card is not dragged.
 
 ---
 
@@ -48,16 +49,17 @@ Install package `il.co.karisi.ran` on a physical Android device (Hebrew UI, RTL)
 
 ---
 
-## 6. Photos — permissions, camera, gallery, lifecycle (bugfix)
+## 6. Photos — camera, gallery, file, lifecycle
 
-_Use real device; first run may show Android permission dialogs._
+_Use a real device. Gallery (🖼) and camera (📷) are separate buttons. The edit sheet must stay open across permission dialogs and the picker._
 
-- [ ] Open task sheet → tap camera button **📷** → choose **מהגלריה**. **While permission dialog is visible:** sheet stays open or returns when dialog dismisses (not destroyed). **Expected:** After **Allow**, chosen image appears on task.
-- [ ] Close sheet, reopen same task. **Expected:** Photo still attached.
-- [ ] Repeat **📷** → **צלם** (capture). **Expected:** Same sheet behavior during permission; photo appears after **Allow**; persists after close/reopen.
-- [ ] Deny permission once (gallery or camera). **Expected:** Sheet remains; task not deleted; no crash.
-- [ ] New unsaved task (FAB **+**) → add photo before naming → close and reopen. **Expected:** Task and photo both remain.
-- [ ] **צלם** → background app from camera UI → return (and if possible trigger process death). Reopen app. **Expected:** Photo attaches to same task; that task is shown/editable.
+- [ ] Open task sheet → tap **🖼** (מהגלריה). **Expected:** Android Photo Picker opens (not the camera). After **Done**, a thumbnail appears on the task.
+- [ ] Close the sheet, reopen the same task. **Expected:** Photo still attached.
+- [ ] Tap **📷** (צלם). **Expected:** The device **camera app** opens, not the Photo Picker. After capture, a thumbnail appears and is still there after close/reopen.
+- [ ] Tap **+** and pick an image file. **Expected:** Thumbnail appears and persists after close/reopen.
+- [ ] Deny camera permission once. **Expected:** Sheet remains; task not deleted; no crash.
+- [ ] New unsaved task (FAB **+**) → add a photo before naming → close and reopen. **Expected:** Task and photo both remain.
+- [ ] **צלם** → leave the app from the camera UI → return (and, if possible, force process death). Reopen the app. **Expected:** Photo attaches to the same task; that task is shown.
 
 ---
 
@@ -73,6 +75,9 @@ _Use real device; first run may show Android permission dialogs._
 - [ ] At fire time, notification appears. **Expected:** Actions **נודניק 10 דק׳**, **נודניק שעה**, **בוצע** present.
 - [ ] **נודניק 10 דק׳** or **נודניק שעה**. **Expected:** Notification reschedules (fires again later).
 - [ ] **בוצע**. **Expected:** Reminder cleared for that task.
+- [ ] Move a task that has a future reminder to **זבל** (sheet trash or long-press drag). **Expected:** The scheduled alarm is cancelled and does not fire.
+- [ ] Restore that task from **זבל**. **Expected:** The reminder is scheduled again.
+- [ ] Permanent-delete a trashed task that had a reminder. **Expected:** No alarm remains for it.
 - [ ] Tap notification body. **Expected:** App opens task edit sheet.
 - [ ] Set reminder when notification permission first requested. **Expected:** Edit sheet not destroyed by permission dialog.
 
@@ -81,14 +86,14 @@ _Use real device; first run may show Android permission dialogs._
 ## 9. Address, Photon, Waze / Maps, location
 
 - [ ] In address field, type 3+ Hebrew letters. **Expected:** Photon suggestions list appears.
-- [ ] Tap one suggestion. **Expected:** Field filled; **W** (Waze) and **G** (Maps) enabled/open external app with destination.
+- [ ] Tap one suggestion. **Expected:** The field is replaced by the full suggestion (no extra letters stuck on the end); the list closes; **W** (Waze) and **G** (Maps) enable.
 - [ ] Tap current-location **◎**. **Expected:** Coordinates filled (and maps actions remain usable if applicable).
 
 ---
 
 ## 10. Contacts picker
 
-- [ ] Tap person icon beside phone field (first time: contacts permission). **Expected:** System contact picker opens; sheet stays open after pick/cancel where applicable.
+- [ ] Tap person icon beside phone field (first time: contacts permission). **Expected:** After **Allow**, the system contact picker opens (it must not stop after the permission dialog). Sheet stays open after pick/cancel.
 - [ ] Pick a contact. **Expected:** Phone filled; if task name was empty, display name filled.
 
 ---

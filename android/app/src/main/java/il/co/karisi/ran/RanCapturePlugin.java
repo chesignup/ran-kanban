@@ -209,6 +209,7 @@ public class RanCapturePlugin extends Plugin {
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             intent.setType("image/*");
         }
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         launchWhenIdle(call, intent, "onPicked");
     }
 

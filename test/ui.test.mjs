@@ -82,6 +82,11 @@ test('delete, undo, and dom sync call syncReminders', () => {
   assert.doesNotMatch(remSaveBlk, /syncReminders\(\)/);
 });
 
+test('backup and restore call syncReminders', () => {
+  assert.match(html, /async function backup\(\)\{[\s\S]*?syncReminders\(\)/);
+  assert.match(html, /async function restoreIfNeeded\(\)\{[\s\S]*?syncReminders\(\)/);
+});
+
 test('reminderCancelIds dedupes pending, tracked, items, and tombstones', () => {
   const items = [
     {id: 't1', page: 'work', when: futureWhen},

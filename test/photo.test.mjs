@@ -6,6 +6,10 @@ import {test} from 'node:test';
 import {fileURLToPath} from 'node:url';
 
 const html = readFileSync(fileURLToPath(new URL('../index.html', import.meta.url)), 'utf8');
+const ranJava = readFileSync(
+  fileURLToPath(new URL('../android/app/src/main/java/il/co/karisi/ran/RanCapturePlugin.java', import.meta.url)),
+  'utf8',
+);
 const pure = html.match(/\/\/ <photo-pure>\r?\n([\s\S]*?)\r?\n\/\/ <\/photo-pure>/);
 assert.ok(pure, 'photo-pure block missing from index.html');
 const api = new Function(pure[1] + '\nreturn {shouldHoldSheet,onDialogCancel,onDialogClose,parsePhotoSession,photoSessionStale,pendingHolds,taskFromSession,restoredPhoto,planPhotoRestore,attachPhoto};')();
@@ -100,6 +104,10 @@ test('gallery bytes and a separate camera source both count as a photo', () => {
   assert.match(html, /addPhoto\('photos'\)/);
   assert.match(html, /rk\/att\//);
   assert.doesNotMatch(html.slice(html.indexOf('async function addPhoto'), html.indexOf('async function addFile')), /source:'PROMPT'/);
+  const addPhoto = html.slice(html.indexOf('async function addPhoto'), html.indexOf('async function addFile'));
+  assert.match(addPhoto, /const taskId=editId/);
+  assert.match(addPhoto, /ingestPhoto\([^)]*,taskId\)/);
+  assert.match(ranJava, /call\.setKeepAlive\(true\)/);
 });
 
 test('pause flush and photo wiring do not close the open sheet', () => {

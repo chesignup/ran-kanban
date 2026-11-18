@@ -14,6 +14,7 @@ import android.graphics.ImageDecoder;
 import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.provider.ContactsContract;
@@ -38,6 +39,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import android.os.ParcelFileDescriptor;
@@ -283,7 +285,7 @@ public class RanCapturePlugin extends Plugin {
                 if (wrote) raw = readFileCapped(file);
                 if ((raw == null || raw.length == 0) && data != null && data.getData() != null) raw = readUri(data.getData());
                 if ((raw == null || raw.length == 0) && data != null && data.getExtras() != null) {
-                    Bitmap thumb = data.getExtras().getParcelable("data");
+                    Bitmap thumb = extrasBitmap(data.getExtras());
                     if (thumb != null) raw = bitmapJpeg(thumb, call.getInt("quality", 80));
                 }
                 if (raw == null || raw.length == 0) {
@@ -319,7 +321,8 @@ public class RanCapturePlugin extends Plugin {
         // Leave onActivityResult before touching the URI (WM-lock grant bug).
         new Handler(Looper.getMainLooper()).postDelayed(() -> worker.execute(() -> {
             try {
-                byte[] raw = readUri(picked);
+                byte[] raw = copyUriToCache(picked);
+                if (raw == null || raw.length == 0) raw = readUri(picked);
                 resolvePhoto(call, raw);
             } catch (Exception e) {
                 reject(call, e.getMessage() == null ? "empty photo" : e.getMessage());
@@ -502,6 +505,31 @@ public class RanCapturePlugin extends Plugin {
         }
         if (out.isEmpty() && data.getData() != null) out.add(data.getData());
         return out;
+    }
+
+    private byte[] copyUriToCache(Uri uri) {
+        try {
+            byte[] raw = readUri(uri);
+            if (raw == null || raw.length == 0) return raw;
+            File dir = new File(getContext().getCacheDir(), "captures");
+            if (!dir.exists() && !dir.mkdirs()) return raw;
+            File out = new File(dir, "pick_" + System.currentTimeMillis() + ".bin");
+            try (FileOutputStream fos = new FileOutputStream(out)) {
+                fos.write(raw);
+            }
+            return readFileCapped(out);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private static Bitmap extrasBitmap(Bundle extras) {
+        if (extras == null) return null;
+        if (Build.VERSION.SDK_INT >= 33) {
+            return extras.getParcelable("data", Bitmap.class);
+        }
+        return extras.getParcelable("data");
     }
 
     private byte[] readUri(Uri uri) throws Exception {

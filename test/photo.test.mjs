@@ -122,7 +122,14 @@ test('pause flush and photo wiring do not close the open sheet', () => {
   const addPhoto = html.slice(html.indexOf('async function addPhoto'), html.indexOf('async function addFile'));
   assert.ok(addPhoto.indexOf('armCapture()') < addPhoto.indexOf('PL.Camera.getPhoto'));
   assert.match(html, /function armCapture\(\)\{[\s\S]*?writePhotoPending\(\)/);
+  assert.match(html, /function armCapture\(\)\{[\s\S]*?sess\.dirty=1/);
   const ingest = html.slice(html.indexOf('async function ingestPhoto'), html.indexOf('function revealTask'));
   assert.ok(ingest.indexOf("idb('put'") < ingest.indexOf('save()'));
+  assert.match(ingest, /String\(editId\)===String\(taskId\)[\s\S]*?renderAtts\(\)/);
   assert.match(html, /await queuePhotoRestore\(\)/);
+});
+
+test('RanCapture plugin caches picked URIs and reads contact extras bitmap', () => {
+  assert.match(ranJava, /copyUriToCache/);
+  assert.match(ranJava, /extrasBitmap/);
 });

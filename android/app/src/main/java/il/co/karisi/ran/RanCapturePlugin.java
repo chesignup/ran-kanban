@@ -10,6 +10,7 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.ImageDecoder;
 import android.graphics.Matrix;
 import android.net.Uri;
 import android.os.Build;
@@ -38,6 +39,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import android.os.ParcelFileDescriptor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -82,6 +85,7 @@ public class RanCapturePlugin extends Plugin {
 
     @PluginMethod
     public void capture(PluginCall call) {
+        call.setKeepAlive(true);
         String source = call.getString("source", "photos");
         if ("camera".equals(source)) {
             if (getPermissionState("camera") != PermissionState.GRANTED) {
@@ -273,7 +277,7 @@ public class RanCapturePlugin extends Plugin {
             return;
         }
         final Intent data = result == null ? null : result.getData();
-        worker.execute(() -> {
+        new Handler(Looper.getMainLooper()).postDelayed(() -> worker.execute(() -> {
             try {
                 byte[] raw = null;
                 if (wrote) raw = readFileCapped(file);
@@ -290,7 +294,7 @@ public class RanCapturePlugin extends Plugin {
             } catch (Exception e) {
                 reject(call, e.getMessage() == null ? "empty photo" : e.getMessage());
             }
-        });
+        }), 120);
     }
 
     @ActivityCallback
@@ -306,15 +310,21 @@ public class RanCapturePlugin extends Plugin {
             return;
         }
         final Uri picked = uri;
+        try {
+            Activity act = getActivity();
+            if (act != null) {
+                act.grantUriPermission(getContext().getPackageName(), picked, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            }
+        } catch (Exception ignored) {}
         // Leave onActivityResult before touching the URI (WM-lock grant bug).
-        new Handler(Looper.getMainLooper()).post(() -> worker.execute(() -> {
+        new Handler(Looper.getMainLooper()).postDelayed(() -> worker.execute(() -> {
             try {
                 byte[] raw = readUri(picked);
                 resolvePhoto(call, raw);
             } catch (Exception e) {
                 reject(call, e.getMessage() == null ? "empty photo" : e.getMessage());
             }
-        }));
+        }), 120);
     }
 
     @ActivityCallback
@@ -329,7 +339,15 @@ public class RanCapturePlugin extends Plugin {
             call.reject("User cancelled");
             return;
         }
-        new Handler(Looper.getMainLooper()).post(() -> worker.execute(() -> {
+        Activity act = getActivity();
+        for (Uri uri : uris) {
+            try {
+                if (act != null) {
+                    act.grantUriPermission(getContext().getPackageName(), uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                }
+            } catch (Exception ignored) {}
+        }
+        new Handler(Looper.getMainLooper()).postDelayed(() -> worker.execute(() -> {
             try {
                 JSArray files = new JSArray();
                 ContentResolver cr = getContext().getContentResolver();
@@ -360,7 +378,7 @@ public class RanCapturePlugin extends Plugin {
             } catch (Exception e) {
                 reject(call, e.getMessage() == null ? "unreadable file" : e.getMessage());
             }
-        }));
+        }), 120);
     }
 
     @ActivityCallback
@@ -488,9 +506,10 @@ public class RanCapturePlugin extends Plugin {
 
     private byte[] readUri(Uri uri) throws Exception {
         Exception last = new Exception("unreadable");
+        ContentResolver cr = getContext().getContentResolver();
         for (int i = 0; i < 6; i++) {
             try {
-                InputStream in = getContext().getContentResolver().openInputStream(uri);
+                InputStream in = cr.openInputStream(uri);
                 if (in == null) throw new IllegalStateException("null stream");
                 try {
                     return readStream(in);
@@ -501,6 +520,18 @@ public class RanCapturePlugin extends Plugin {
                 last = e;
                 try { Thread.sleep(40L * (i + 1)); } catch (InterruptedException ie) { break; }
             }
+        }
+        try {
+            ParcelFileDescriptor pfd = cr.openFileDescriptor(uri, "r");
+            if (pfd != null) {
+                try (FileInputStream in = new FileInputStream(pfd.getFileDescriptor())) {
+                    return readStream(in);
+                } finally {
+                    pfd.close();
+                }
+            }
+        } catch (Exception e) {
+            last = e;
         }
         throw last;
     }
@@ -526,6 +557,36 @@ public class RanCapturePlugin extends Plugin {
 
     private String jpegBase64(byte[] raw, int quality, int maxW) {
         if (quality <= 0 || quality > 100) quality = 80;
+        Bitmap bmp = decodeBitmap(raw, maxW);
+        if (bmp == null) return null;
+        try {
+            if (maxW > 0 && bmp.getWidth() > maxW) {
+                int h = Math.max(1, bmp.getHeight() * maxW / bmp.getWidth());
+                Bitmap scaled = Bitmap.createScaledBitmap(bmp, maxW, h, true);
+                if (scaled != bmp) bmp.recycle();
+                bmp = scaled;
+            }
+            return Base64.encodeToString(bitmapJpeg(bmp, quality), Base64.NO_WRAP);
+        } finally {
+            if (bmp != null && !bmp.isRecycled()) bmp.recycle();
+        }
+    }
+
+    private Bitmap decodeBitmap(byte[] raw, int maxW) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            try {
+                ImageDecoder.Source src = ImageDecoder.createSource(ByteBuffer.wrap(raw));
+                Bitmap bmp = ImageDecoder.decodeBitmap(src, (decoder, info, source) -> {
+                    decoder.setAllocator(ImageDecoder.ALLOCATOR_SOFTWARE);
+                    if (maxW > 0 && info.getSize().getWidth() > maxW) {
+                        float r = (float) maxW / info.getSize().getWidth();
+                        int h = Math.max(1, Math.round(info.getSize().getHeight() * r));
+                        decoder.setTargetSize(maxW, h);
+                    }
+                });
+                if (bmp != null) return bmp;
+            } catch (Exception ignored) {}
+        }
         BitmapFactory.Options bounds = new BitmapFactory.Options();
         bounds.inJustDecodeBounds = true;
         BitmapFactory.decodeByteArray(raw, 0, raw.length, bounds);
@@ -538,16 +599,9 @@ public class RanCapturePlugin extends Plugin {
         Bitmap bmp = BitmapFactory.decodeByteArray(raw, 0, raw.length, opts);
         if (bmp == null) return null;
         try {
-            bmp = applyExif(bmp, raw);
-            if (maxW > 0 && bmp.getWidth() > maxW) {
-                int h = Math.max(1, bmp.getHeight() * maxW / bmp.getWidth());
-                Bitmap scaled = Bitmap.createScaledBitmap(bmp, maxW, h, true);
-                if (scaled != bmp) bmp.recycle();
-                bmp = scaled;
-            }
-            return Base64.encodeToString(bitmapJpeg(bmp, quality), Base64.NO_WRAP);
-        } finally {
-            if (bmp != null && !bmp.isRecycled()) bmp.recycle();
+            return applyExif(bmp, raw);
+        } catch (Exception e) {
+            return bmp;
         }
     }
 

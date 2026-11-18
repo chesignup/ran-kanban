@@ -21,7 +21,14 @@ const {commitSuggestion, stickySuggestionValue} = new Function(
 
 const remindPure = html.match(/\/\/ <remind-pure>\r?\n([\s\S]*?)\r?\n\/\/ <\/remind-pure>/);
 assert.ok(remindPure, 'remind-pure block missing from index.html');
-const {reminderIds} = new Function(remindPure[1] + '\nreturn {reminderIds};')();
+const {reminderIds, reminderCancelIds, reminderScheduleList} = new Function(
+  remindPure[1] + '\nreturn {reminderIds, reminderCancelIds, reminderScheduleList};',
+)();
+const nid = (s) => {
+  let h = 7;
+  for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) | 0;
+  return Math.abs(h) % 2000000000 + 1;
+};
 
 const now = Date.parse('2026-11-16T12:00:00');
 const futureWhen = '2026-11-16T15:00';
@@ -71,4 +78,44 @@ test('delete, undo, and dom sync call syncReminders', () => {
   assert.match(html, /function act\([^)]*\)\{[\s\S]*?syncReminders\(/);
   assert.match(html, /function undo\(\)\{[\s\S]*?syncReminders\(/);
   assert.match(html, /function syncDom\([^)]*\)\{[\s\S]*?syncReminders\(/);
+  const remSaveBlk = html.slice(html.indexOf('function remSave'), html.indexOf('// ===== local notifications'));
+  assert.doesNotMatch(remSaveBlk, /syncReminders\(\)/);
+});
+
+test('reminderCancelIds dedupes pending, tracked, items, and tombstones', () => {
+  const items = [
+    {id: 't1', page: 'work', when: futureWhen},
+    {id: 't2', page: 'trash', when: futureWhen},
+  ];
+  const tombs = [{id: 'gone'}];
+  const pending = [nid('t1'), 42];
+  const tracked = [nid('orphan'), nid('t1')];
+  const ids = reminderCancelIds(items, tombs, pending, tracked, nid);
+  assert.ok(ids.includes(nid('t1')));
+  assert.ok(ids.includes(nid('t2')));
+  assert.ok(ids.includes(nid('gone')));
+  assert.ok(ids.includes(nid('orphan')));
+  assert.ok(ids.includes(42));
+  assert.equal(new Set(ids).size, ids.length);
+});
+
+test('reminderScheduleList only schedules future non-trash reminders', () => {
+  const items = [
+    {id: 't1', page: 'work', when: futureWhen, name: 'A', address: 'x'},
+    {id: 't2', page: 'trash', when: futureWhen, name: 'B'},
+    {id: 't3', page: 'work', when: pastWhen, name: 'C'},
+  ];
+  const list = reminderScheduleList(items, now, nid);
+  assert.equal(list.length, 1);
+  assert.equal(list[0].id, nid('t1'));
+  assert.equal(list[0].extra.tid, 't1');
+});
+
+test('syncReminders recomputes schedule after cancel (not stale want)', () => {
+  assert.match(
+    html,
+    /async function syncReminders\(\)[\s\S]*?cancel[\s\S]*?await LN\.cancel[\s\S]*?reminderScheduleList\(I,Date\.now\(\)/,
+  );
+  assert.match(html, /remindSyncQ/);
+  assert.match(html, /rk_alarm_ids/);
 });

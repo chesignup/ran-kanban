@@ -534,7 +534,7 @@ async function backup(){if(!stateTrusted)return;if(backing)return scheduleBackup
   const local={items:liveItems(),tombstones:tombstones.slice()};
   const merged=remote?mergeState(local,remote):local;
   if(remote&&!merged.items.length&&remote.items.length&&!merged.tombstones.length)return;
-  if(canonState(local)!==canonState(merged)){const fresh=I.filter(t=>t.fresh&&!merged.items.some(x=>x.id===t.id));I=merged.items.concat(fresh);tombstones=merged.tombstones;await flushBody();draw()}
+  if(canonState(local)!==canonState(merged)){const fresh=I.filter(t=>t.fresh&&!merged.items.some(x=>x.id===t.id));I=merged.items.concat(fresh);tombstones=merged.tombstones;await flushBody();draw();syncReminders()}
   if(!remote||canonState(remote)!==canonState(merged)){
     await dPut('state.json',new Blob([JSON.stringify({v:2,at:Date.now(),items:merged.items,tombstones:merged.tombstones})],{type:'application/json'}),st&&st.id);
     localStorage.lastBk=Date.now()}
@@ -549,7 +549,7 @@ async function restoreIfNeeded(){if(booting)return;try{
   const merged=mergeState(local,remote);
   for(const t of merged.items)for(const a of t.att||[]){try{if(await raw('f','get',a.id))continue;const f=fs.find(x=>x.name=='att_'+a.id);if(f)await idb('put',await (await gfetch(DQ+'/'+f.id+'?alt=media')).blob(),a.id)}catch(e){console.warn(e)}}
   if(canonState(local)!==canonState(merged))H.push(JSON.stringify(I));
-  I=merged.items;tombstones=merged.tombstones;stateTrusted=true;await flushBody();draw();toast('שוחזר מ-Drive ✓');
+  I=merged.items;tombstones=merged.tombstones;stateTrusted=true;await flushBody();draw();toast('שוחזר מ-Drive ✓');syncReminders();
  }catch(e){toast('שחזור נכשל',1)}}
 function gOut(){localStorage.removeItem('gOn');gTok=null;sessionStorage.removeItem('gTok');gUser='';localStorage.removeItem('gUser');try{PL.SocialLogin&&PL.SocialLogin.logout({provider:'google'})}catch(e){}accd.close();toast('התנתקת',1)}
 function openAcc(){supA.href=`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('המשימות של רן – תמיכה')}&body=${encodeURIComponent('\n\n—\nגרסה: '+APP_VER)}`;supA.textContent='תמיכה · גרסה '+APP_VER;const on=!!localStorage.gOn;accs.textContent=on?`מחובר${gUser?' כ-'+gUser:''} · גיבוי אחרון: ${localStorage.lastBk?new Date(+localStorage.lastBk).toLocaleString('he-IL'):'עדיין לא'}`:'לא מחובר. הנתונים נשמרים רק במכשיר (מוצפנים).';
@@ -569,7 +569,7 @@ function writePhotoPending(){
   try{localStorage.setItem(PHOTO_PENDING_KEY,JSON.stringify(rec))}catch(e){}
 }
 function clearPhotoPending(){try{localStorage.removeItem(PHOTO_PENDING_KEY)}catch(e){}}
-function armCapture(){sheetHold.capture=true;sheetWanted=true;try{if(sess&&sess.dirty)applyDraft()}catch(e){}writePhotoPending()}
+function armCapture(){sheetHold.capture=true;sheetWanted=true;try{if(sess){sess.dirty=1;applyDraft()}}catch(e){}writePhotoPending()}
 async function ingestPhoto(r, taskId){
   const b64s=r&&(r.base64String||r.base64);
   if(!b64s||taskId==null)return false;
@@ -587,8 +587,11 @@ async function ingestPhoto(r, taskId){
   const idx=I.findIndex(x=>x&&String(x.id)===String(taskId));
   if(idx<0)return false;
   I[idx]=next;
-  if(sess&&String(editId)===String(taskId)){draftAtt=next.att.slice();sess.dirty=1;applyDraft();renderAtts()}
-  else revealTask(taskId);
+  if(String(editId)===String(taskId)){
+    draftAtt=next.att.slice();
+    if(sess){sess.dirty=1;applyDraft()}
+    renderAtts();
+  }else revealTask(taskId);
   save();draw();
   return true;
 }
@@ -887,7 +890,8 @@ if(/iphone|ipad/i.test(navigator.userAgent)&&!standalone&&!localStorage.instShow
   }
   booting=false;fab.style.pointerEvents='';draw();go(2,1);
   try{await queuePhotoRestore()}catch(e){console.warn('photo restore',e)}
-  initNotifs();if(localStorage.onb)permsOnboarding();
+  try{await initNotifs()}catch(e){console.warn('notif',e)}
+  if(localStorage.onb)permsOnboarding();
   if(!localStorage.onb)onb.style.display='flex';if(stateTrusted&&localStorage.gOn)scheduleBackup(!I.length);
   if(!NATIVE&&'serviceWorker'in navigator&&location.protocol=='https:')navigator.serviceWorker.register('sw.js');
 })();

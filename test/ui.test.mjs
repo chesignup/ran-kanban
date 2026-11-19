@@ -21,8 +21,8 @@ const {commitSuggestion, stickySuggestionValue} = new Function(
 
 const remindPure = html.match(/\/\/ <remind-pure>\r?\n([\s\S]*?)\r?\n\/\/ <\/remind-pure>/);
 assert.ok(remindPure, 'remind-pure block missing from index.html');
-const {reminderIds, reminderCancelIds, reminderScheduleList} = new Function(
-  remindPure[1] + '\nreturn {reminderIds, reminderCancelIds, reminderScheduleList};',
+const {reminderIds, reminderCancelIds, reminderScheduleList, reminderOrphanPendingIds} = new Function(
+  remindPure[1] + '\nreturn {reminderIds, reminderCancelIds, reminderScheduleList, reminderOrphanPendingIds};',
 )();
 const nid = (s) => {
   let h = 7;
@@ -123,4 +123,36 @@ test('syncReminders recomputes schedule after cancel (not stale want)', () => {
   );
   assert.match(html, /remindSyncQ/);
   assert.match(html, /rk_alarm_ids/);
+});
+test('reminder icon click stops propagation and askCal holds sheet before open', () => {
+  // F3: alarm icon must not dismiss sheet via backdrop; suspend before ensurePerms/openSheet.
+  assert.match(html, /id="iCal"[^>]*onclick="event\.stopPropagation\(\);event\.preventDefault\(\);commit\(\);askCal\(editId\)"/);
+  const ask = html.slice(html.indexOf('async function askCal'), html.indexOf('function remSave'));
+  assert.match(ask, /suspendReopen\s*=\s*true/);
+  assert.ok(ask.indexOf('suspendReopen=true') < ask.indexOf('ensurePerms'));
+  assert.ok(ask.indexOf('ensurePerms') < ask.indexOf('openSheet(cal)'));
+  assert.match(html, /if\(!suspendReopen\)reopenHeldSheet\(\)/);
+  assert.match(html, /rkLog\('askCal:start'/);
+});
+
+test('orphan pending alarms are cancelled and schedule list is deduped', () => {
+  const items = [
+    {id: 'live', page: 'work', when: futureWhen},
+    {id: 'gone-trash', page: 'trash', when: futureWhen},
+  ];
+  const pending = [nid('live'), nid('orphan-2016'), nid('gone-trash'), 999001];
+  const orphans = reminderOrphanPendingIds(items, pending, nid);
+  assert.ok(orphans.includes(nid('orphan-2016')));
+  assert.ok(orphans.includes(nid('gone-trash')));
+  assert.ok(orphans.includes(999001));
+  assert.ok(!orphans.includes(nid('live')));
+  // cancel set must include orphans + trash + tracked so startup clears 0.1.7 leftovers
+  const cancel = reminderCancelIds(items, [{id: 'tomb'}], pending, [nid('legacy')], nid);
+  for (const id of [nid('orphan-2016'), nid('gone-trash'), nid('legacy'), nid('live'), nid('tomb'), 999001]) {
+    assert.ok(cancel.includes(id), 'missing ' + id);
+  }
+  assert.equal(new Set(cancel).size, cancel.length);
+  const sync = html.slice(html.indexOf('async function syncReminders'), html.indexOf('async function initNotifs'));
+  assert.match(sync, /seen\.has\(n\.id\)/);
+  assert.match(sync, /rkLog\('syncReminders:cancel'/);
 });

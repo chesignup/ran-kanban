@@ -133,3 +133,84 @@ test('RanCapture plugin caches picked URIs and reads contact extras bitmap', () 
   assert.match(ranJava, /copyUriToCache/);
   assert.match(ranJava, /extrasBitmap/);
 });
+
+test('mocked RanCapture result ingests into task att and drives renderAtts', async () => {
+  // JS-level reproduction of F1/F2: plugin resolve → ingestPhoto → storage → thumbs path.
+  const store = new Map();
+  const I = [{id: 't-photo', name: 'TEST', page: 'work', att: []}];
+  let editId = 't-photo';
+  let draftAtt = [];
+  let lastIngestSig = '';
+  let rendered = [];
+  const idb = async (op, val, key) => {
+    if (op === 'put') { store.set(key, val); return; }
+    if (op === 'get') return store.get(key) || null;
+  };
+  const cameraParts = (format) => {
+    const f = String(format || 'jpeg').toLowerCase().replace('jpg', 'jpeg');
+    if (f === 'png') return {type: 'image/png', ext: 'png'};
+    return {type: 'image/jpeg', ext: 'jpg'};
+  };
+  const b64blob = (b, type) => ({__blob: true, b64: b, type});
+  const byId = (id) => I.find((x) => x && String(x.id) === String(id));
+  const attachPhoto = (task, att) => {
+    if (!task || !att || att.id == null) return null;
+    const next = {...task, att: [...(Array.isArray(task.att) ? task.att : []), att]};
+    delete next.fresh;
+    return next;
+  };
+  const renderAtts = async () => {
+    rendered = [];
+    for (const a of draftAtt) {
+      const b = await idb('get', null, a.id);
+      rendered.push({id: a.id, type: a.type, hasBlob: !!b, thumb: !!(b && /^image/.test(a.type))});
+    }
+  };
+  async function ingestPhoto(r, taskId) {
+    const b64s = r && (r.base64String || r.base64);
+    if (!b64s || taskId == null) return false;
+    const sig = String(taskId) + ':' + b64s.length + ':' + b64s.slice(0, 40);
+    if (sig === lastIngestSig) {
+      const cur = byId(taskId);
+      if (cur && String(editId) === String(taskId)) {
+        draftAtt = (cur.att || []).slice();
+        await renderAtts();
+      }
+      return !!(cur && (cur.att || []).length);
+    }
+    const parts = cameraParts(r.format);
+    const att = {id: 'a1', name: 'photo_1.' + parts.ext, type: parts.type};
+    await idb('put', b64blob(b64s, parts.type), att.id);
+    const cur = byId(taskId);
+    if (!cur) return false;
+    const next = attachPhoto(cur, att);
+    const idx = I.findIndex((x) => x && String(x.id) === String(taskId));
+    if (idx < 0) return false;
+    I[idx] = next;
+    lastIngestSig = sig;
+    if (String(editId) === String(taskId)) {
+      draftAtt = next.att.slice();
+      await renderAtts();
+    }
+    return true;
+  }
+
+  const pluginResult = {base64String: 'aGVsbG8=', format: 'jpeg'}; // mocked RanCapture resolve
+  assert.equal(await ingestPhoto(pluginResult, 't-photo'), true);
+  assert.equal(I[0].att.length, 1);
+  assert.equal(I[0].att[0].type, 'image/jpeg');
+  assert.equal(store.has('a1'), true);
+  assert.equal(rendered.length, 1);
+  assert.equal(rendered[0].thumb, true);
+
+  // Dedupe must still refresh draftAtt/renderAtts (F1/F2 regression).
+  draftAtt = [];
+  rendered = [];
+  assert.equal(await ingestPhoto(pluginResult, 't-photo'), true);
+  assert.equal(draftAtt.length, 1);
+  assert.equal(rendered[0].thumb, true);
+
+  assert.match(html, /rkLog\('ingestPhoto:start'/);
+  assert.match(html, /rkLog\('addPhoto:ran-result'/);
+  assert.match(html, /lastIngestSig=sig/);
+});

@@ -94,7 +94,7 @@ html{font-size:calc(16px * var(--z,1));touch-action:pan-x pan-y}
 <div id="toast"><span id="tmsg"></span><button onclick="undo()">בטל</button></div>
 <div id="inst"><b id="instT">התקן למסך הבית למסך מלא</b><button id="instB">התקן</button><button onclick="instDone()">✕</button></div>
 <div id="errb">לא הצלחנו לקרוא את המשימות השמורות. הן לא נמחקו — אפשר לנסות שוב, או לפנות לתמיכה.</div>
-<dialog id="dlg" class="sheet tsk"><div id="dbox"><form id="f" onsubmit="return false"><div class="shd" id="dhd"><span id="dtt"></span><div id="sic"><button type="button" class="ic wa" id="iWA" title="שתף בוואטסאפ" onclick="commit();shareWA(editId)"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.4 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 1.9 1.1 1 2 1.3 2.3 1.4.3.1.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg></button><button type="button" class="ic" id="iCal" title="תזכורת" onclick="commit();askCal(editId)"><span style="font-size:1rem">⏰</span></button><button type="button" class="ic" id="iRes" title="שחזר" onclick="restore()"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button type="button" class="ic del" id="iDel" title="מחק לצמיתות" onclick="delForever()"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></div></div>
+<dialog id="dlg" class="sheet tsk"><div id="dbox"><form id="f" onsubmit="return false"><div class="shd" id="dhd"><span id="dtt"></span><div id="sic"><button type="button" class="ic wa" id="iWA" title="שתף בוואטסאפ" onclick="commit();shareWA(editId)"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.4 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 1.9 1.1 1 2 1.3 2.3 1.4.3.1.4.1.6-.1l.8-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg></button><button type="button" class="ic" id="iCal" title="תזכורת" onclick="event.stopPropagation();event.preventDefault();commit();askCal(editId)"><span style="font-size:1rem">⏰</span></button><button type="button" class="ic" id="iRes" title="שחזר" onclick="restore()"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button type="button" class="ic del" id="iDel" title="מחק לצמיתות" onclick="delForever()"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></div></div>
 <div id="mvrow"></div>
 <input name="name" class="nm" placeholder="שם המשימה" autocomplete="off">
 <div class="ln"><span class="li">📞</span><input name="phone" type="tel" inputmode="tel" placeholder="טלפון" dir="auto"><button type="button" class="mi" onclick="pickContact()" title="אנשי קשר"><svg viewBox="0 0 24 24" style="width:1rem;height:1rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></button></div>
@@ -112,7 +112,7 @@ html{font-size:calc(16px * var(--z,1));touch-action:pan-x pan-y}
 <script>
 const P=[['ran','רן'],['gen','כללי'],['work','עבודה'],['trash','זבל']],K='ran_items_v2';
 // ===== config =====
-const APP_VER='0.1.9',SUPPORT_EMAIL='ran-tasks@mail.grokbot.com';
+const APP_VER='0.1.10',SUPPORT_EMAIL='ran-tasks@mail.grokbot.com';
 const GOOGLE_WEB_CLIENT_ID='155487724170-kv6v01qub9h8f1seolq5v2dqhjench45.apps.googleusercontent.com'; // Web OAuth client (project ran-tasks)
 const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.appdata';
 const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()),PL=(window.Capacitor&&Capacitor.Plugins)||{};
@@ -311,10 +311,25 @@ function reminderIds(items, now){
 function reminderCancelIds(items, tombs, pendingIds, trackedIds, nidFn){
   const seen=new Set(),out=[];
   const add=id=>{const n=Number(id);if(!Number.isFinite(n)||seen.has(n))return;seen.add(n);out.push(n)};
+  // Always cancel every OS-pending + previously tracked id (clears orphans whose tasks are gone/trashed).
   for(const id of pendingIds||[])add(id);
   for(const id of trackedIds||[])add(id);
   for(const t of items||[])if(t&&t.id!=null)add(nidFn(String(t.id)));
   for(const t of tombs||[])if(t&&t.id!=null)add(nidFn(String(t.id)));
+  return out;
+}
+function reminderOrphanPendingIds(items, pendingIds, nidFn){
+  const live=new Set();
+  for(const t of items||[]){
+    if(!t||t.id==null||t.page==='trash'||!t.when)continue;
+    live.add(nidFn(String(t.id)));
+  }
+  const out=[];
+  for(const id of pendingIds||[]){
+    const n=Number(id);
+    if(!Number.isFinite(n))continue;
+    if(!live.has(n))out.push(n);
+  }
   return out;
 }
 function reminderScheduleList(items, now, nidFn){
@@ -473,6 +488,7 @@ function save(){
   scheduleBackup();
   return flushQ;
 }
+const rkLog=(...a)=>{try{console.log('RK',...a)}catch(e){}};
 let sheetHold={hidden:false,paused:false,capture:false,perm:false},sheetWanted=false,suspendReopen=false,photoRestoreBuf=null,photoRestoreBusy=null,lastIngestSig='';
 const PHOTO_PENDING_KEY='rk_photo_pending';
 function liveHold(){
@@ -492,7 +508,7 @@ function onHide(){sheetHold.hidden=true;sheetHold.paused=true;window.__rkFlush()
 function onShow(){sheetHold.paused=false;sheetHold.hidden=!!document.hidden;reopenHeldSheet()}
 addEventListener('visibilitychange',()=>{if(document.hidden)onHide();else onShow()});
 addEventListener('pagehide',()=>onHide());
-function onAppRestoredResult(ev){const parsed=restoredPhoto(ev);if(!parsed)return;photoRestoreBuf=parsed;if(!booting)queuePhotoRestore()}
+function onAppRestoredResult(ev){rkLog('appRestoredResult',{plugin:ev&&ev.pluginId,method:ev&&ev.methodName,success:ev&&ev.success});const parsed=restoredPhoto(ev);if(!parsed){rkLog('appRestoredResult:unparsed');return}photoRestoreBuf=parsed;rkLog('appRestoredResult:buf',{ok:parsed.ok,b64len:(parsed.base64String||'').length});if(!booting)queuePhotoRestore()}
 if(PL.App&&PL.App.addListener){
   PL.App.addListener('pause',()=>onHide());
   PL.App.addListener('resume',()=>onShow());
@@ -572,27 +588,40 @@ function clearPhotoPending(){try{localStorage.removeItem(PHOTO_PENDING_KEY)}catc
 function armCapture(){sheetHold.capture=true;sheetWanted=true;try{if(sess){sess.dirty=1;applyDraft()}}catch(e){}writePhotoPending()}
 async function ingestPhoto(r, taskId){
   const b64s=r&&(r.base64String||r.base64);
-  if(!b64s||taskId==null)return false;
+  rkLog('ingestPhoto:start',{taskId,editId,hasB64:!!b64s,len:b64s?b64s.length:0});
+  if(!b64s||taskId==null){rkLog('ingestPhoto:reject-empty');return false}
   const sig=String(taskId)+':'+b64s.length+':'+b64s.slice(0,40);
-  if(sig===lastIngestSig)return true;
+  if(sig===lastIngestSig){
+    const cur=byId(taskId);
+    rkLog('ingestPhoto:dedupe',{taskId,hasTask:!!cur,att:(cur&&cur.att||[]).length});
+    if(cur&&String(editId)===String(taskId)){
+      draftAtt=(cur.att||[]).slice();
+      if(sess){sess.dirty=1;applyDraft()}
+      await renderAtts();
+    }else if(cur) revealTask(taskId);
+    return !!(cur&&(cur.att||[]).length);
+  }
   const parts=cameraParts(r.format);
   const att={id:'a'+Date.now()+Math.random().toString(36).slice(2,6),name:'photo_'+Date.now()+'.'+parts.ext,type:parts.type};
   await idb('put',b64blob(b64s,parts.type),att.id);
-  try{if(NATIVE&&PL.Filesystem)await PL.Filesystem.writeFile({path:'rk/att/'+att.id,data:b64s,directory:'DATA',recursive:true})}catch(e){}
-  lastIngestSig=sig;
+  try{if(NATIVE&&PL.Filesystem)await PL.Filesystem.writeFile({path:'rk/att/'+att.id,data:b64s,directory:'DATA',recursive:true})}catch(e){rkLog('ingestPhoto:fs-write-fail',String(e))}
   const cur=byId(taskId);
-  if(!cur)return false;
+  if(!cur){rkLog('ingestPhoto:no-task',taskId);return false}
   const next=attachPhoto(cur,att);
-  if(!next)return false;
+  if(!next){rkLog('ingestPhoto:attach-fail');return false}
   const idx=I.findIndex(x=>x&&String(x.id)===String(taskId));
-  if(idx<0)return false;
+  if(idx<0){rkLog('ingestPhoto:idx-miss');return false}
   I[idx]=next;
+  lastIngestSig=sig;
+  sheetWanted=true;
   if(String(editId)===String(taskId)){
     draftAtt=next.att.slice();
     if(sess){sess.dirty=1;applyDraft()}
-    renderAtts();
+    await renderAtts();
   }else revealTask(taskId);
   save();draw();
+  if(String(editId)===String(taskId)&&!dlg.open)reopenHeldSheet();
+  rkLog('ingestPhoto:ok',{taskId,attId:att.id,atts:next.att.length,dlgOpen:!!dlg.open});
   return true;
 }
 function revealTask(id){const t=byId(id);if(!t)return;const j=P.findIndex(p=>p[0]===t.page);if(j>=0){go(j,1);curPage=j;dt()}if(!dlg.open||String(editId)!==String(id))edit(id)}
@@ -636,26 +665,37 @@ async function addPhoto(which){
   if(editId==null)return;
   const taskId=editId;
   const source=captureSource(which);
+  rkLog('addPhoto:start',{which,source,taskId});
   armCapture();
   if(!NATIVE||!PL.Camera){(source==='CAMERA'?cap:gal).click();setTimeout(()=>{if(!document.hidden){sheetHold.capture=false;clearPhotoPending()}},120000);return}
   try{
-    if(source==='CAMERA'&&!await ensurePerms('camera')){clearPhotoPending();return}
+    if(source==='CAMERA'&&!await ensurePerms('camera')){rkLog('addPhoto:cam-perm-denied');clearPhotoPending();return}
     let r=null;
     const Ran=ranPlugin();
     if(Ran&&Ran.capture){
-      try{r=await Ran.capture({source:source==='CAMERA'?'camera':'photos',quality:80,width:2000})}
-      catch(e){const msg=String((e&&e.message)||e||'');if(/cancel/i.test(msg))throw e;r=null}
+      try{
+        r=await Ran.capture({source:source==='CAMERA'?'camera':'photos',quality:80,width:2000});
+        rkLog('addPhoto:ran-result',{has:!!r,keys:r?Object.keys(r):[],b64len:(r&&(r.base64String||r.base64)||'').length});
+      }catch(e){
+        const msg=String((e&&e.message)||e||'');
+        rkLog('addPhoto:ran-err',msg);
+        if(/user cancelled|canceled|cancelled by user/i.test(msg)&&!/empty/i.test(msg))throw e;
+        r=null;
+      }
     }
     if(!normalizePhotoResult(r)){
+      rkLog('addPhoto:fallback-camera-plugin');
       r=await PL.Camera.getPhoto({resultType:'base64',source:source,quality:80,width:2000,correctOrientation:true,promptLabelHeader:'הוספת תמונה',promptLabelPhoto:'מהגלריה',promptLabelPicture:'צלם',promptLabelCancel:'ביטול'});
     }
     const bytes=await readPhotoResult(r);
+    rkLog('addPhoto:bytes',{ok:!!(bytes&&bytes.b64),len:bytes&&bytes.b64?bytes.b64.length:0});
     if(!bytes||!bytes.b64){toast('לא ניתן להוסיף תמונה',1);clearPhotoPending();return}
     const ok=await ingestPhoto({base64String:bytes.b64,format:bytes.format},taskId);
+    rkLog('addPhoto:ingest',ok);
     if(!ok)toast('לא ניתן להוסיף תמונה',1);
-    clearPhotoPending();
-  }catch(e){clearPhotoPending();const msg=String((e&&e.message)||e||'');if(!/cancel/i.test(msg))toast('לא ניתן להוסיף תמונה',1)}
-  finally{sheetHold.capture=false;reopenHeldSheet()}
+    else clearPhotoPending();
+  }catch(e){clearPhotoPending();const msg=String((e&&e.message)||e||'');rkLog('addPhoto:catch',msg);if(!/user cancelled|canceled|cancelled by user/i.test(msg)||/empty/i.test(msg))toast('לא ניתן להוסיף תמונה',1)}
+  finally{sheetHold.capture=false;reopenHeldSheet();rkLog('addPhoto:finally',{dlgOpen:!!dlg.open,editId,atts:draftAtt.length})}
 }
 async function addFile(){
   if(editId==null)return;
@@ -793,8 +833,8 @@ f.address.addEventListener('input',()=>{if(pickedLabel!=null&&Date.now()-sugPick
 function here(){if(!navigator.geolocation)return alert('אין גישה למיקום');const prev=sheetHold.perm;sheetHold.perm=true;sheetWanted=true;const done=()=>{sheetHold.perm=prev;reopenHeldSheet()};navigator.geolocation.getCurrentPosition(p=>{done();draftLL=[+p.coords.latitude.toFixed(6),+p.coords.longitude.toFixed(6)];if(!f.address.value)f.address.value='מיקום נוכחי';links();changed()},()=>{done();alert('לא ניתן לקבל מיקום')},{enableHighAccuracy:true,timeout:10000})}
 async function addAtt(inp){sheetHold.capture=true;sheetWanted=true;try{for(const file of inp.files){const id='a'+Date.now()+Math.random().toString(36).slice(2,6);await idb('put',file,id);draftAtt.push({id,name:file.name,type:file.type})}inp.value='';renderAtts();changed()}finally{sheetHold.capture=false;clearPhotoPending();reopenHeldSheet()}}
 let attGen=0;
-async function renderAtts(){const gen=++attGen,list=draftAtt.slice();atts.innerHTML='';for(const a of list){if(gen!==attGen)return;const d=document.createElement('div');d.className='att';d.innerHTML=`<button type="button">✕</button>${esc(a.name)}`;d.querySelector('button').onclick=e=>{e.stopPropagation();draftAtt=draftAtt.filter(x=>x!==a);renderAtts();changed()};
-const b=await getAtt(a.id);if(gen!==attGen)return;if(b){const u=URL.createObjectURL(b);if(/^image/.test(a.type)){const im=new Image();im.src=u;d.appendChild(im)}d.onclick=()=>open(u,'_blank')}atts.appendChild(d)}}
+async function renderAtts(){const gen=++attGen,list=draftAtt.slice();rkLog('renderAtts:start',{gen,n:list.length});atts.innerHTML='';for(const a of list){if(gen!==attGen){rkLog('renderAtts:stale',gen);return}const d=document.createElement('div');d.className='att';d.innerHTML=`<button type="button">✕</button>${esc(a.name)}`;d.querySelector('button').onclick=e=>{e.stopPropagation();draftAtt=draftAtt.filter(x=>x!==a);renderAtts();changed()};
+const b=await getAtt(a.id);if(gen!==attGen){rkLog('renderAtts:stale-after-get',gen);return}if(b){const u=URL.createObjectURL(b);if(/^image/.test(a.type||b.type||'')){const im=new Image();im.src=u;d.appendChild(im)}else if(/^image/.test(a.type||'')){const im=new Image();im.src=u;d.appendChild(im)}d.onclick=()=>open(u,'_blank')}else rkLog('renderAtts:missing-blob',a.id);atts.appendChild(d)}rkLog('renderAtts:done',{gen,n:list.length,dom:atts.children.length})}
 // swipe-down to close: anywhere on the sheet or backdrop
 (function(){let y0=null,x0,dy=0,t0,on=false,tgt;
 dlg.addEventListener('touchstart',e=>{const t=e.touches[0];y0=t.clientY;x0=t.clientX;dy=0;on=false;t0=Date.now();tgt=e.target},{passive:true});
@@ -813,8 +853,19 @@ const pad=n=>String(n).padStart(2,'0'),loc=d=>`${d.getFullYear()}-${pad(d.getMon
 const fmtW=w=>fmtD(w.slice(0,10))+' '+w.slice(11,16);
 function quick(){const n=new Date(),r=[];const add=(l,d)=>r.push([l,loc(d)]);add('בעוד שעה',new Date(+n+36e5));add('בעוד שעתיים',new Date(+n+72e5));
  const ev=new Date(n);ev.setHours(20,0,0,0);if(ev>n)add('הערב 20:00',ev);const tm=new Date(n);tm.setDate(tm.getDate()+1);tm.setHours(9,0,0,0);add('מחר 09:00',tm);const d2=new Date(n);d2.setDate(d2.getDate()+2);d2.setHours(9,0,0,0);add('בעוד יומיים',d2);return r}
-async function askCal(id){const t=byId(id);if(!t)return;calId=id;cn.textContent=t.name;const q=quick();qr.innerHTML=q.map(([l,w])=>`<button class="dchip" onclick="remSave('${w}')">${l}<small>${fmtW(w)}</small></button>`).join('');
- cdt.value=t.when||q[3][1];cdt.min=loc(new Date());const d=new Date(cdt.value);cd.textContent=d.getDate();remClr.style.display=t.when?'':'none';await ensurePerms('notif');openSheet(cal)}
+async function askCal(id){
+  const t=byId(id);if(!t){rkLog('askCal:no-task',id);return}
+  rkLog('askCal:start',{id,dlgOpen:!!dlg.open,suspend:suspendReopen});
+  calId=id;cn.textContent=t.name;const q=quick();qr.innerHTML=q.map(([l,w])=>`<button type="button" class="dchip" onclick="event.stopPropagation();remSave('${w}')">${l}<small>${fmtW(w)}</small></button>`).join('');
+  cdt.value=t.when||q[3][1];cdt.min=loc(new Date());const d=new Date(cdt.value);cd.textContent=d.getDate();remClr.style.display=t.when?'':'none';
+  sheetWanted=true;suspendReopen=true;
+  try{
+    await ensurePerms('notif');
+    const opened=openSheet(cal);
+    rkLog('askCal:open',{opened,calOpen:!!cal.open,dlgOpen:!!dlg.open,suspend:suspendReopen});
+    if(!opened){suspendReopen=false;reopenHeldSheet()}
+  }catch(e){rkLog('askCal:err',String(e));suspendReopen=false;reopenHeldSheet()}
+}
 function remSave(w){const id=calId;cal.close();if(w&&new Date(w)<=new Date()){toast('בחר זמן עתידי',1);return}
  act(w?'⏰ תזכורת ל'+fmtW(w):'התזכורת הוסרה',()=>{const t=byId(id);if(w)t.when=w;else delete t.when})}
 // ===== local notifications
@@ -822,14 +873,19 @@ const LN=PL.LocalNotifications,nid=s=>{let h=7;for(const c of String(s))h=(h*31+
 const RK_ALARM_IDS='rk_alarm_ids';
 let remindSyncQ=Promise.resolve();
 async function syncReminders(){if(!NATIVE||!LN)return;remindSyncQ=remindSyncQ.catch(()=>{}).then(async()=>{try{
- let pendingIds=[];try{const p=await LN.getPending();pendingIds=(p.notifications||[]).map(n=>n.id)}catch(e){}
+ let pendingIds=[];try{const p=await LN.getPending();pendingIds=(p.notifications||[]).map(n=>n.id);rkLog('syncReminders:pending',pendingIds.length)}catch(e){rkLog('syncReminders:getPending-fail',String(e))}
  let trackedIds=[];try{trackedIds=JSON.parse(localStorage.getItem(RK_ALARM_IDS)||'[]')}catch(e){}
+ // Cancel every pending/tracked/task/tomb id, then schedule only live non-trash future reminders (dedupe by id).
  const cancel=reminderCancelIds(I,tombstones,pendingIds,trackedIds,nid).map(id=>({id}));
+ rkLog('syncReminders:cancel',cancel.length);
  if(cancel.length)await LN.cancel({notifications:cancel});
  const list=reminderScheduleList(I,Date.now(),nid);
- if(list.length)await LN.schedule({notifications:list});
- try{localStorage.setItem(RK_ALARM_IDS,JSON.stringify(list.map(n=>n.id)))}catch(e){}
-}catch(e){console.warn('notif',e)}});return remindSyncQ}
+ // Dedupe schedule list by notification id
+ const seen=new Set();const dedup=[];for(const n of list){if(seen.has(n.id))continue;seen.add(n.id);dedup.push(n)}
+ rkLog('syncReminders:schedule',dedup.length);
+ if(dedup.length)await LN.schedule({notifications:dedup});
+ try{localStorage.setItem(RK_ALARM_IDS,JSON.stringify(dedup.map(n=>n.id)))}catch(e){}
+}catch(e){console.warn('notif',e);rkLog('syncReminders:err',String(e))}});return remindSyncQ}
 async function initNotifs(){if(!NATIVE||!LN)return;try{await LN.createChannel({id:'rem',name:'תזכורות',importance:5,vibration:true});}catch(e){}
  await LN.registerActionTypes({types:[{id:'REM',actions:[{id:'s10',title:'נודניק 10 דק׳'},{id:'s60',title:'נודניק שעה'},{id:'done',title:'בוצע'}]}]});
  LN.addListener('localNotificationActionPerformed',a=>{const tid=a.notification.extra&&a.notification.extra.tid,t=byId(tid);if(!t)return;
@@ -842,21 +898,42 @@ function openSheet(d){
   if(!d)return false;
   if(d.open)return true;
   const nest=d!==dlg&&dlg.open;
-  if(nest){suspendReopen=true;try{dlg.close()}catch(e){}d.addEventListener('close',()=>{suspendReopen=false;reopenHeldSheet()},{once:true})}
-  try{d.showModal();return true}catch(e){try{d.show();return true}catch(err){if(nest){suspendReopen=false;reopenHeldSheet()}return false}}
+  if(nest){
+    suspendReopen=true;
+    try{dlg.close()}catch(e){}
+    d.addEventListener('close',()=>{suspendReopen=false;rkLog('nested-sheet:close',d.id);reopenHeldSheet()},{once:true});
+  }
+  const show=()=>{try{d.showModal();return true}catch(e){try{d.show();return true}catch(err){return false}}};
+  if(nest){
+    // Closing+opening nested <dialog> in the same turn fails on some WebViews (sheet stays closed).
+    let ok=false;
+    try{ok=show()}catch(e){ok=false}
+    if(!ok){
+      setTimeout(()=>{
+        if(!show()){suspendReopen=false;reopenHeldSheet();rkLog('openSheet:deferred-fail',d.id)}
+        else rkLog('openSheet:deferred-ok',d.id);
+      },0);
+      return true;
+    }
+    rkLog('openSheet:nest-ok',d.id);
+    return true;
+  }
+  const ok=show();
+  if(!ok){rkLog('openSheet:fail',d&&d.id);return false}
+  return true;
 }
 async function ensurePerms(which){if(!NATIVE)return true;const seen=JSON.parse(localStorage.permSeen||'{}');const prevPerm=sheetHold.perm;sheetHold.perm=true;
  try{if(which=='notif'&&LN){let s=await LN.checkPermissions();if(s.display!='granted'){if(!seen.notif&&!await explain('notif'))return false;seen.notif=1;s=await LN.requestPermissions()}
    try{const ex=await LN.checkExactNotificationSetting();if(ex.exact_alarm!='granted'&&!seen.exact){seen.exact=1;localStorage.permSeen=JSON.stringify(seen);if(await explain('notif','לתזכורות מדויקות יש לאשר "שעונים מעוררים ותזכורות" במסך הבא.'))await LN.changeExactNotificationSetting()}}catch(e){}
    localStorage.permSeen=JSON.stringify(seen);return s.display=='granted'}
   if(which=='camera'&&PL.Camera){const s=await PL.Camera.checkPermissions();if(s.camera!='granted'){if(!seen.camera&&!await explain('camera'))return false;seen.camera=1;localStorage.permSeen=JSON.stringify(seen);await PL.Camera.requestPermissions({permissions:['camera']})}return true}
-  if(which=='contacts'&&PL.Contacts){const s=await PL.Contacts.checkPermissions();if(s.contacts!='granted'){if(!seen.contacts&&!await explain('contacts'))return false;seen.contacts=1;localStorage.permSeen=JSON.stringify(seen);return (await PL.Contacts.requestPermissions()).contacts=='granted'}return true}}catch(e){console.warn(e);return true}finally{sheetHold.perm=prevPerm;reopenHeldSheet()}}
+  if(which=='contacts'&&PL.Contacts){const s=await PL.Contacts.checkPermissions();if(s.contacts!='granted'){if(!seen.contacts&&!await explain('contacts'))return false;seen.contacts=1;localStorage.permSeen=JSON.stringify(seen);return (await PL.Contacts.requestPermissions()).contacts=='granted'}return true}}catch(e){console.warn(e);return true}finally{sheetHold.perm=prevPerm;if(!suspendReopen)reopenHeldSheet()}}
 function explain(k,extra){if(dlg.open||suspendReopen)return Promise.resolve(true);return new Promise(r=>{pmt.textContent=PERM_TXT[k][0];pmx.textContent=extra||PERM_TXT[k][1];let done=false;const finish=v=>{if(done)return;done=true;r(!!v)};pmok.onclick=()=>{finish(true);try{pmd.close()}catch(e){}};pmd.addEventListener('close',()=>finish(false),{once:true});if(!openSheet(pmd))finish(true)})}
 async function permsOnboarding(){if(!NATIVE||localStorage.permOnb)return;localStorage.permOnb=1;await ensurePerms('notif')}
 
 function sheetMove(k){const id=editId;dlg.close();mvTo(id,k)}
 function restore(){const id=editId,k=byId(id).prev||'work';dlg.close();act('שוחזר ל'+pn(k),()=>{const t=byId(id);t.page=k;I=I.filter(x=>x!==t);I.unshift(t)})}
-function delForever(){const t0=byId(editId);if(!t0||t0.page!='trash')return;if(!confirm('למחוק לצמיתות?'))return;const id=editId,alarm=nid(id);dlg.close();act('נמחק לצמיתות',()=>I=I.filter(x=>!(x.id==id&&x.page=='trash')));if(NATIVE&&LN)LN.cancel({notifications:[{id:alarm}]}).catch(()=>{})}
+function delForever(){const t0=byId(editId);if(!t0||t0.page!='trash')return;if(!confirm('למחוק לצמיתות?'))return;const id=editId,alarm=nid(id);dlg.close();act('נמחק לצמיתות',()=>{I=I.filter(x=>!(x.id==id&&x.page=='trash'));if(!tombstones.some(t=>String(t.id)===String(id)))tombstones.push({id,at:Date.now()})});if(NATIVE&&LN)LN.cancel({notifications:[{id:alarm}]}).catch(()=>{})}
 // ---- WhatsApp share
 function waText(t){const L=['*'+t.name+'*'];const q=t.ll?t.ll.join(','):t.address;
 if(t.address||t.ll)L.push('📍 '+(t.address||'מיקום')+'\n'+'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q));

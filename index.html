@@ -112,7 +112,7 @@ html{font-size:calc(16px * var(--z,1));touch-action:pan-x pan-y}
 <script>
 const P=[['ran','רן'],['gen','כללי'],['work','עבודה'],['trash','זבל']],K='ran_items_v2';
 // ===== config =====
-const APP_VER='0.1.8',SUPPORT_EMAIL='ran-tasks@mail.grokbot.com';
+const APP_VER='0.1.9',SUPPORT_EMAIL='ran-tasks@mail.grokbot.com';
 const GOOGLE_WEB_CLIENT_ID='155487724170-kv6v01qub9h8f1seolq5v2dqhjench45.apps.googleusercontent.com'; // Web OAuth client (project ran-tasks)
 const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.appdata';
 const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()),PL=(window.Capacitor&&Capacitor.Plugins)||{};
@@ -307,6 +307,25 @@ function reminderIds(items, now){
     if(at>now)out.push(String(t.id));
   }
   return out;
+}
+function reminderCancelIds(items, tombs, pendingIds, trackedIds, nidFn){
+  const seen=new Set(),out=[];
+  const add=id=>{const n=Number(id);if(!Number.isFinite(n)||seen.has(n))return;seen.add(n);out.push(n)};
+  for(const id of pendingIds||[])add(id);
+  for(const id of trackedIds||[])add(id);
+  for(const t of items||[])if(t&&t.id!=null)add(nidFn(String(t.id)));
+  for(const t of tombs||[])if(t&&t.id!=null)add(nidFn(String(t.id)));
+  return out;
+}
+function reminderScheduleList(items, now, nidFn){
+  const list=[];
+  for(const sid of reminderIds(items, now)){
+    const t=(items||[]).find(x=>x&&String(x.id)===sid);
+    if(!t)continue;
+    list.push({id:nidFn(sid),title:'⏰ '+(t.name||'תזכורת'),body:[t.address,t.phone].filter(Boolean).join(' · ')||'הקש לפתיחה',
+      schedule:{at:new Date(t.when),allowWhileIdle:true},actionTypeId:'REM',channelId:'rem',extra:{tid:t.id}});
+  }
+  return list;
 }
 // </remind-pure>
 let tombstones=[],stateTrusted=false,persistedSnap='',flushQ=Promise.resolve(),keyAbort=null,saveWarned=false,booting=true;
@@ -515,7 +534,7 @@ async function backup(){if(!stateTrusted)return;if(backing)return scheduleBackup
   const local={items:liveItems(),tombstones:tombstones.slice()};
   const merged=remote?mergeState(local,remote):local;
   if(remote&&!merged.items.length&&remote.items.length&&!merged.tombstones.length)return;
-  if(canonState(local)!==canonState(merged)){const fresh=I.filter(t=>t.fresh&&!merged.items.some(x=>x.id===t.id));I=merged.items.concat(fresh);tombstones=merged.tombstones;await flushBody();draw()}
+  if(canonState(local)!==canonState(merged)){const fresh=I.filter(t=>t.fresh&&!merged.items.some(x=>x.id===t.id));I=merged.items.concat(fresh);tombstones=merged.tombstones;await flushBody();draw();syncReminders()}
   if(!remote||canonState(remote)!==canonState(merged)){
     await dPut('state.json',new Blob([JSON.stringify({v:2,at:Date.now(),items:merged.items,tombstones:merged.tombstones})],{type:'application/json'}),st&&st.id);
     localStorage.lastBk=Date.now()}
@@ -530,7 +549,7 @@ async function restoreIfNeeded(){if(booting)return;try{
   const merged=mergeState(local,remote);
   for(const t of merged.items)for(const a of t.att||[]){try{if(await raw('f','get',a.id))continue;const f=fs.find(x=>x.name=='att_'+a.id);if(f)await idb('put',await (await gfetch(DQ+'/'+f.id+'?alt=media')).blob(),a.id)}catch(e){console.warn(e)}}
   if(canonState(local)!==canonState(merged))H.push(JSON.stringify(I));
-  I=merged.items;tombstones=merged.tombstones;stateTrusted=true;await flushBody();draw();toast('שוחזר מ-Drive ✓');
+  I=merged.items;tombstones=merged.tombstones;stateTrusted=true;await flushBody();draw();toast('שוחזר מ-Drive ✓');syncReminders();
  }catch(e){toast('שחזור נכשל',1)}}
 function gOut(){localStorage.removeItem('gOn');gTok=null;sessionStorage.removeItem('gTok');gUser='';localStorage.removeItem('gUser');try{PL.SocialLogin&&PL.SocialLogin.logout({provider:'google'})}catch(e){}accd.close();toast('התנתקת',1)}
 function openAcc(){supA.href=`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent('המשימות של רן – תמיכה')}&body=${encodeURIComponent('\n\n—\nגרסה: '+APP_VER)}`;supA.textContent='תמיכה · גרסה '+APP_VER;const on=!!localStorage.gOn;accs.textContent=on?`מחובר${gUser?' כ-'+gUser:''} · גיבוי אחרון: ${localStorage.lastBk?new Date(+localStorage.lastBk).toLocaleString('he-IL'):'עדיין לא'}`:'לא מחובר. הנתונים נשמרים רק במכשיר (מוצפנים).';
@@ -550,7 +569,7 @@ function writePhotoPending(){
   try{localStorage.setItem(PHOTO_PENDING_KEY,JSON.stringify(rec))}catch(e){}
 }
 function clearPhotoPending(){try{localStorage.removeItem(PHOTO_PENDING_KEY)}catch(e){}}
-function armCapture(){sheetHold.capture=true;sheetWanted=true;try{if(sess&&sess.dirty)applyDraft()}catch(e){}writePhotoPending()}
+function armCapture(){sheetHold.capture=true;sheetWanted=true;try{if(sess){sess.dirty=1;applyDraft()}}catch(e){}writePhotoPending()}
 async function ingestPhoto(r, taskId){
   const b64s=r&&(r.base64String||r.base64);
   if(!b64s||taskId==null)return false;
@@ -568,7 +587,11 @@ async function ingestPhoto(r, taskId){
   const idx=I.findIndex(x=>x&&String(x.id)===String(taskId));
   if(idx<0)return false;
   I[idx]=next;
-  if(sess&&String(editId)===String(taskId)){draftAtt=next.att.slice();sess.dirty=1;applyDraft();renderAtts()}
+  if(String(editId)===String(taskId)){
+    draftAtt=next.att.slice();
+    if(sess){sess.dirty=1;applyDraft()}
+    renderAtts();
+  }else revealTask(taskId);
   save();draw();
   return true;
 }
@@ -611,6 +634,7 @@ async function readPhotoResult(r){
 }
 async function addPhoto(which){
   if(editId==null)return;
+  const taskId=editId;
   const source=captureSource(which);
   armCapture();
   if(!NATIVE||!PL.Camera){(source==='CAMERA'?cap:gal).click();setTimeout(()=>{if(!document.hidden){sheetHold.capture=false;clearPhotoPending()}},120000);return}
@@ -627,7 +651,7 @@ async function addPhoto(which){
     }
     const bytes=await readPhotoResult(r);
     if(!bytes||!bytes.b64){toast('לא ניתן להוסיף תמונה',1);clearPhotoPending();return}
-    const ok=await ingestPhoto({base64String:bytes.b64,format:bytes.format},editId);
+    const ok=await ingestPhoto({base64String:bytes.b64,format:bytes.format},taskId);
     if(!ok)toast('לא ניתן להוסיף תמונה',1);
     clearPhotoPending();
   }catch(e){clearPhotoPending();const msg=String((e&&e.message)||e||'');if(!/cancel/i.test(msg))toast('לא ניתן להוסיף תמונה',1)}
@@ -792,16 +816,20 @@ function quick(){const n=new Date(),r=[];const add=(l,d)=>r.push([l,loc(d)]);add
 async function askCal(id){const t=byId(id);if(!t)return;calId=id;cn.textContent=t.name;const q=quick();qr.innerHTML=q.map(([l,w])=>`<button class="dchip" onclick="remSave('${w}')">${l}<small>${fmtW(w)}</small></button>`).join('');
  cdt.value=t.when||q[3][1];cdt.min=loc(new Date());const d=new Date(cdt.value);cd.textContent=d.getDate();remClr.style.display=t.when?'':'none';await ensurePerms('notif');openSheet(cal)}
 function remSave(w){const id=calId;cal.close();if(w&&new Date(w)<=new Date()){toast('בחר זמן עתידי',1);return}
- act(w?'⏰ תזכורת ל'+fmtW(w):'התזכורת הוסרה',()=>{const t=byId(id);if(w)t.when=w;else delete t.when});syncReminders()}
+ act(w?'⏰ תזכורת ל'+fmtW(w):'התזכורת הוסרה',()=>{const t=byId(id);if(w)t.when=w;else delete t.when})}
 // ===== local notifications
-const LN=PL.LocalNotifications,nid=s=>{let h=7;for(const c of s)h=(h*31+c.charCodeAt(0))|0;return Math.abs(h)%2000000000+1};
-async function syncReminders(){if(!NATIVE||!LN)return;try{const now=Date.now(),want=new Set(reminderIds(I,now));const cancel=[];
- try{const p=await LN.getPending();for(const n of (p.notifications||[]))cancel.push({id:n.id})}catch(e){}
- for(const t of I)if(t&&t.id!=null)cancel.push({id:nid(t.id)});
- const seen=new Set(),uniq=cancel.filter(n=>{if(seen.has(n.id))return false;seen.add(n.id);return true});
- if(uniq.length)await LN.cancel({notifications:uniq});
- const list=I.filter(t=>t&&want.has(String(t.id))).map(t=>({id:nid(t.id),title:'⏰ '+(t.name||'תזכורת'),body:[t.address,t.phone].filter(Boolean).join(' · ')||'הקש לפתיחה',
-  schedule:{at:new Date(t.when),allowWhileIdle:true},actionTypeId:'REM',channelId:'rem',extra:{tid:t.id}}));if(list.length)await LN.schedule({notifications:list})}catch(e){console.warn('notif',e)}}
+const LN=PL.LocalNotifications,nid=s=>{let h=7;for(const c of String(s))h=(h*31+c.charCodeAt(0))|0;return Math.abs(h)%2000000000+1};
+const RK_ALARM_IDS='rk_alarm_ids';
+let remindSyncQ=Promise.resolve();
+async function syncReminders(){if(!NATIVE||!LN)return;remindSyncQ=remindSyncQ.catch(()=>{}).then(async()=>{try{
+ let pendingIds=[];try{const p=await LN.getPending();pendingIds=(p.notifications||[]).map(n=>n.id)}catch(e){}
+ let trackedIds=[];try{trackedIds=JSON.parse(localStorage.getItem(RK_ALARM_IDS)||'[]')}catch(e){}
+ const cancel=reminderCancelIds(I,tombstones,pendingIds,trackedIds,nid).map(id=>({id}));
+ if(cancel.length)await LN.cancel({notifications:cancel});
+ const list=reminderScheduleList(I,Date.now(),nid);
+ if(list.length)await LN.schedule({notifications:list});
+ try{localStorage.setItem(RK_ALARM_IDS,JSON.stringify(list.map(n=>n.id)))}catch(e){}
+}catch(e){console.warn('notif',e)}});return remindSyncQ}
 async function initNotifs(){if(!NATIVE||!LN)return;try{await LN.createChannel({id:'rem',name:'תזכורות',importance:5,vibration:true});}catch(e){}
  await LN.registerActionTypes({types:[{id:'REM',actions:[{id:'s10',title:'נודניק 10 דק׳'},{id:'s60',title:'נודניק שעה'},{id:'done',title:'בוצע'}]}]});
  LN.addListener('localNotificationActionPerformed',a=>{const tid=a.notification.extra&&a.notification.extra.tid,t=byId(tid);if(!t)return;
@@ -862,7 +890,8 @@ if(/iphone|ipad/i.test(navigator.userAgent)&&!standalone&&!localStorage.instShow
   }
   booting=false;fab.style.pointerEvents='';draw();go(2,1);
   try{await queuePhotoRestore()}catch(e){console.warn('photo restore',e)}
-  initNotifs();if(localStorage.onb)permsOnboarding();
+  try{await initNotifs()}catch(e){console.warn('notif',e)}
+  if(localStorage.onb)permsOnboarding();
   if(!localStorage.onb)onb.style.display='flex';if(stateTrusted&&localStorage.gOn)scheduleBackup(!I.length);
   if(!NATIVE&&'serviceWorker'in navigator&&location.protocol=='https:')navigator.serviceWorker.register('sw.js');
 })();

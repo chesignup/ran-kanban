@@ -21,6 +21,8 @@ import android.provider.ContactsContract;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.util.Base64;
+import android.util.Log;
+import android.content.SharedPreferences;
 import androidx.activity.result.ActivityResult;
 import androidx.core.content.FileProvider;
 import androidx.exifinterface.media.ExifInterface;
@@ -69,6 +71,13 @@ import java.util.concurrent.Executors;
 )
 public class RanCapturePlugin extends Plugin {
     private static final int MAX_BYTES = 25 * 1024 * 1024;
+    private static final String PREFS_CAPTURE = "ran_capture";
+    private static final String KEY_PENDING_PATH = "pending_path";
+    private static final String KEY_PENDING_AT = "pending_at";
+
+    private static void rk(String msg) {
+        Log.i("RK", msg);
+    }
     private static final String[] KNOWN_CAMERAS = {
         "com.sec.android.app.camera",
         "com.samsung.android.app.camera",
@@ -102,6 +111,50 @@ public class RanCapturePlugin extends Plugin {
             return;
         }
         openPhotos(call);
+    }
+
+    @PluginMethod
+    public void pollPending(PluginCall call) {
+        SharedPreferences prefs = getContext().getSharedPreferences(PREFS_CAPTURE, Activity.MODE_PRIVATE);
+        String path = prefs.getString(KEY_PENDING_PATH, null);
+        if (path == null || path.isEmpty()) {
+            resolve(call, new JSObject());
+            return;
+        }
+        File f = new File(path);
+        if (!f.exists() || f.length() == 0) {
+            prefs.edit().remove(KEY_PENDING_PATH).remove(KEY_PENDING_AT).apply();
+            resolve(call, new JSObject());
+            return;
+        }
+        worker.execute(() -> {
+            try {
+                byte[] raw = readFileCapped(f);
+                String encoded = Base64.encodeToString(raw, Base64.NO_WRAP);
+                JSObject ret = new JSObject();
+                ret.put("base64String", encoded);
+                ret.put("format", "jpeg");
+                prefs.edit().remove(KEY_PENDING_PATH).remove(KEY_PENDING_AT).apply();
+                rk("pollPending path=" + path + " raw=" + raw.length + " b64=" + encoded.length());
+                resolve(call, ret);
+            } catch (Exception e) {
+                reject(call, e.getMessage() == null ? "poll failed" : e.getMessage());
+            }
+        });
+    }
+
+    @PluginMethod
+    public void clearPending(PluginCall call) {
+        SharedPreferences prefs = getContext().getSharedPreferences(PREFS_CAPTURE, Activity.MODE_PRIVATE);
+        String path = prefs.getString(KEY_PENDING_PATH, null);
+        prefs.edit().remove(KEY_PENDING_PATH).remove(KEY_PENDING_AT).apply();
+        if (path != null && !path.isEmpty()) {
+            try {
+                new File(path).delete();
+            } catch (Exception ignored) {}
+        }
+        rk("clearPending");
+        resolve(call, new JSObject());
     }
 
     @PluginMethod
@@ -265,21 +318,21 @@ public class RanCapturePlugin extends Plugin {
 
     @ActivityCallback
     private void onCamera(PluginCall call, ActivityResult result) {
-        if (call == null) return;
-        String path = call.getString("outPath");
+        String path = call != null ? call.getString("outPath") : null;
         if (path == null || path.isEmpty()) path = cameraOutPath;
         if (path == null || path.isEmpty()) {
-            path = getContext().getSharedPreferences("ran_capture", Activity.MODE_PRIVATE).getString("out", null);
+            path = getContext().getSharedPreferences(PREFS_CAPTURE, Activity.MODE_PRIVATE).getString("out", null);
         }
         final String out = path;
         File file = out == null ? null : new File(out);
         boolean wrote = file != null && file.exists() && file.length() > 0;
         if (!wrote && (result == null || result.getResultCode() != Activity.RESULT_OK)) {
             if (file != null) file.delete();
-            call.reject("User cancelled");
+            publishFail(call, "User cancelled");
             return;
         }
         final Intent data = result == null ? null : result.getData();
+        final int quality = call != null ? call.getInt("quality", 80) : 80;
         new Handler(Looper.getMainLooper()).postDelayed(() -> worker.execute(() -> {
             try {
                 byte[] raw = null;
@@ -287,32 +340,39 @@ public class RanCapturePlugin extends Plugin {
                 if ((raw == null || raw.length == 0) && data != null && data.getData() != null) raw = readUri(data.getData());
                 if ((raw == null || raw.length == 0) && data != null && data.getExtras() != null) {
                     Bitmap thumb = extrasBitmap(data.getExtras());
-                    if (thumb != null) raw = bitmapJpeg(thumb, call.getInt("quality", 80));
+                    if (thumb != null) raw = bitmapJpeg(thumb, quality);
                 }
                 if (raw == null || raw.length == 0) {
-                    reject(call, "empty photo");
+                    publishFail(call, "empty photo");
                     return;
                 }
-                resolvePhoto(call, raw);
+                publishPhoto(call, raw);
             } catch (Exception e) {
-                reject(call, e.getMessage() == null ? "empty photo" : e.getMessage());
+                publishFail(call, e.getMessage() == null ? "empty photo" : e.getMessage());
             }
-        }), 120);
+        }), 400);
     }
 
     @ActivityCallback
     private void onPicked(PluginCall call, ActivityResult result) {
-        if (call == null) return;
         if (result == null || result.getResultCode() != Activity.RESULT_OK || result.getData() == null) {
-            call.reject("User cancelled");
+            publishFail(call, "User cancelled");
             return;
         }
         Uri uri = firstUri(result.getData());
         if (uri == null) {
-            call.reject("empty photo");
+            publishFail(call, "empty photo");
             return;
         }
         final Uri picked = uri;
+        final Intent resultData = result.getData();
+        int persistFlags = resultData.getFlags()
+            & (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        if (persistFlags != 0) {
+            try {
+                getContext().getContentResolver().takePersistableUriPermission(picked, persistFlags);
+            } catch (Exception ignored) {}
+        }
         try {
             Activity act = getActivity();
             if (act != null) {
@@ -324,11 +384,15 @@ public class RanCapturePlugin extends Plugin {
             try {
                 byte[] raw = copyUriToCache(picked);
                 if (raw == null || raw.length == 0) raw = readUri(picked);
-                resolvePhoto(call, raw);
+                if (raw == null || raw.length == 0) {
+                    publishFail(call, "empty photo");
+                    return;
+                }
+                publishPhoto(call, raw);
             } catch (Exception e) {
-                reject(call, e.getMessage() == null ? "empty photo" : e.getMessage());
+                publishFail(call, e.getMessage() == null ? "empty photo" : e.getMessage());
             }
-        }), 120);
+        }), 400);
     }
 
     @ActivityCallback
@@ -403,6 +467,51 @@ public class RanCapturePlugin extends Plugin {
                 reject(call, e.getMessage() == null ? "contact failed" : e.getMessage());
             }
         }));
+    }
+
+    private File stashJpegFile(byte[] jpeg) throws Exception {
+        File dir = new File(getContext().getCacheDir(), "captures");
+        if (!dir.exists() && !dir.mkdirs()) throw new IllegalStateException("captures dir");
+        File out = new File(dir, "pending_" + System.currentTimeMillis() + ".jpg");
+        try (FileOutputStream fos = new FileOutputStream(out)) {
+            fos.write(jpeg);
+        }
+        return out;
+    }
+
+    private void publishPhoto(PluginCall call, byte[] raw) {
+        int quality = call != null ? call.getInt("quality", 80) : 80;
+        int width = call != null ? call.getInt("width", 2000) : 2000;
+        String encoded = jpegBase64(raw, quality, width);
+        if (encoded == null) {
+            publishFail(call, "empty photo");
+            return;
+        }
+        JSObject ret = new JSObject();
+        ret.put("base64String", encoded);
+        ret.put("format", "jpeg");
+        try {
+            byte[] jpeg = Base64.decode(encoded, Base64.NO_WRAP);
+            File stash = stashJpegFile(jpeg);
+            getContext().getSharedPreferences(PREFS_CAPTURE, Activity.MODE_PRIVATE)
+                .edit()
+                .putString(KEY_PENDING_PATH, stash.getAbsolutePath())
+                .putLong(KEY_PENDING_AT, System.currentTimeMillis())
+                .apply();
+        } catch (Exception e) {
+            rk("stash failed: " + e.getMessage());
+        }
+        rk("publishPhoto rawLen=" + raw.length + " b64Len=" + encoded.length());
+        if (call != null) resolve(call, ret);
+        notifyListeners("captureReady", ret, true);
+    }
+
+    private void publishFail(PluginCall call, String msg) {
+        if (call != null) reject(call, msg);
+        JSObject ev = new JSObject();
+        ev.put("message", msg);
+        notifyListeners("captureFailed", ev, true);
+        rk("publishFail: " + msg);
     }
 
     private void resolvePhoto(PluginCall call, byte[] raw) {

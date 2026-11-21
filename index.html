@@ -112,7 +112,7 @@ html{font-size:calc(16px * var(--z,1));touch-action:pan-x pan-y}
 <script>
 const P=[['ran','רן'],['gen','כללי'],['work','עבודה'],['trash','זבל']],K='ran_items_v2';
 // ===== config =====
-const APP_VER='0.1.10',SUPPORT_EMAIL='ran-tasks@mail.grokbot.com';
+const APP_VER='0.1.11',SUPPORT_EMAIL='ran-tasks@mail.grokbot.com';
 const GOOGLE_WEB_CLIENT_ID='155487724170-kv6v01qub9h8f1seolq5v2dqhjench45.apps.googleusercontent.com'; // Web OAuth client (project ran-tasks)
 const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.appdata';
 const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()),PL=(window.Capacitor&&Capacitor.Plugins)||{};
@@ -277,6 +277,21 @@ function attachPhoto(task, att){
   const next={...task,att:[...(Array.isArray(task.att)?task.att:[]),att]};
   delete next.fresh;
   return next;
+}
+/** Native activity-result delivery: never drop a confirmed pick when PluginCall is null. */
+function planCaptureDelivery(opts){
+  const o=opts||{};
+  const ok=!!(o.resultOk&&(o.uri||o.filePath||o.hasBytes));
+  if(!ok)return {action:o.resultOk?'fail':'cancel'};
+  if(o.callPresent)return {action:'resolve',alsoEvent:true,stash:true};
+  return {action:'event',alsoEvent:true,stash:true};
+}
+function capturePromiseRace(nativePromise, ms){
+  const t=Math.max(1000,+(ms||90000));
+  return Promise.race([
+    Promise.resolve(nativePromise),
+    new Promise((_,rej)=>setTimeout(()=>rej(new Error('capture timeout')),t))
+  ]);
 }
 // </photo-pure>
 // <gesture-pure>
@@ -505,7 +520,7 @@ window.__rkFlush=function(){
   flushQ=flushQ.then(()=>flushBody()).catch(e=>console.warn('flush',e));
 };
 function onHide(){sheetHold.hidden=true;sheetHold.paused=true;window.__rkFlush()}
-function onShow(){sheetHold.paused=false;sheetHold.hidden=!!document.hidden;reopenHeldSheet()}
+function onShow(){sheetHold.paused=false;sheetHold.hidden=!!document.hidden;reopenHeldSheet();pollNativePhotoPending()}
 addEventListener('visibilitychange',()=>{if(document.hidden)onHide();else onShow()});
 addEventListener('pagehide',()=>onHide());
 function onAppRestoredResult(ev){rkLog('appRestoredResult',{plugin:ev&&ev.pluginId,method:ev&&ev.methodName,success:ev&&ev.success});const parsed=restoredPhoto(ev);if(!parsed){rkLog('appRestoredResult:unparsed');return}photoRestoreBuf=parsed;rkLog('appRestoredResult:buf',{ok:parsed.ok,b64len:(parsed.base64String||'').length});if(!booting)queuePhotoRestore()}
@@ -515,6 +530,44 @@ if(PL.App&&PL.App.addListener){
   PL.App.addListener('appStateChange',s=>{if(s&&s.isActive===false)onHide();else if(s&&s.isActive===true)onShow()});
   PL.App.addListener('appRestoredResult',ev=>{try{onAppRestoredResult(ev)}catch(e){console.warn('photo restore',e)}});
 }
+let photoEventBusy=null;
+async function ingestNativePhotoPayload(payload,via){
+  const n=normalizePhotoResult(payload);
+  if(!n){rkLog('nativePhoto:empty',via);return false}
+  let taskId=editId;
+  try{const raw=localStorage.getItem(PHOTO_PENDING_KEY);const s=parsePhotoSession(raw);if(s&&s.taskId!=null)taskId=s.taskId}catch(e){}
+  if(taskId==null){rkLog('nativePhoto:no-task',via);return false}
+  let bytes=null;
+  if(n.base64String)bytes={b64:n.base64String,format:n.format};
+  else bytes=await readPhotoResult(n);
+  if(!bytes||!bytes.b64){rkLog('nativePhoto:no-bytes',via);return false}
+  rkLog('nativePhoto:ingest',{via,taskId,len:bytes.b64.length});
+  const ok=await ingestPhoto({base64String:bytes.b64,format:bytes.format},taskId);
+  if(ok){clearPhotoPending();try{const Ran=ranPlugin();if(Ran&&Ran.clearPending)await Ran.clearPending()}catch(e){}}
+  return ok;
+}
+function onCaptureReady(ev){
+  rkLog('captureReady',{keys:ev?Object.keys(ev):[]});
+  photoEventBusy=(photoEventBusy||Promise.resolve()).then(()=>ingestNativePhotoPayload(ev,'event')).catch(e=>rkLog('captureReady:err',String(e)));
+  return photoEventBusy;
+}
+async function pollNativePhotoPending(){
+  if(booting||document.hidden)return;
+  const Ran=ranPlugin();
+  if(!(Ran&&Ran.pollPending))return;
+  try{
+    const r=await Ran.pollPending();
+    if(!normalizePhotoResult(r))return;
+    rkLog('pollPending:hit',{b64len:(r.base64String||r.base64||'').length});
+    await ingestNativePhotoPayload(r,'poll');
+  }catch(e){rkLog('pollPending:err',String(e))}
+}
+(function wireRanCaptureEvents(){
+  const Ran=ranPlugin();
+  if(!(Ran&&Ran.addListener))return;
+  try{Ran.addListener('captureReady',ev=>{try{onCaptureReady(ev)}catch(e){rkLog('captureReady:throw',String(e))}})}catch(e){}
+  try{Ran.addListener('captureFailed',ev=>rkLog('captureFailed',ev&&ev.message))}catch(e){}
+})();
 async function askPersist(){try{if(navigator.storage&&navigator.storage.persist)await navigator.storage.persist()}catch(e){}}
 async function loadAll(){
   await askPersist();
@@ -674,27 +727,38 @@ async function addPhoto(which){
     const Ran=ranPlugin();
     if(Ran&&Ran.capture){
       try{
-        r=await Ran.capture({source:source==='CAMERA'?'camera':'photos',quality:80,width:2000});
+        r=await capturePromiseRace(Ran.capture({source:source==='CAMERA'?'camera':'photos',quality:80,width:2000}),90000);
         rkLog('addPhoto:ran-result',{has:!!r,keys:r?Object.keys(r):[],b64len:(r&&(r.base64String||r.base64)||'').length});
       }catch(e){
         const msg=String((e&&e.message)||e||'');
         rkLog('addPhoto:ran-err',msg);
+        if(/timeout/i.test(msg)){await pollNativePhotoPending();if(byId(taskId)&&(byId(taskId).att||[]).length){clearPhotoPending();return}}
         if(/user cancelled|canceled|cancelled by user/i.test(msg)&&!/empty/i.test(msg))throw e;
         r=null;
       }
     }
     if(!normalizePhotoResult(r)){
       rkLog('addPhoto:fallback-camera-plugin');
-      r=await PL.Camera.getPhoto({resultType:'base64',source:source,quality:80,width:2000,correctOrientation:true,promptLabelHeader:'הוספת תמונה',promptLabelPhoto:'מהגלריה',promptLabelPicture:'צלם',promptLabelCancel:'ביטול'});
+      try{
+        r=await capturePromiseRace(PL.Camera.getPhoto({resultType:'base64',source:source,quality:80,width:2000,correctOrientation:true,promptLabelHeader:'הוספת תמונה',promptLabelPhoto:'מהגלריה',promptLabelPicture:'צלם',promptLabelCancel:'ביטול'}),90000);
+      }catch(e2){
+        await pollNativePhotoPending();
+        if(byId(taskId)&&(byId(taskId).att||[]).length){clearPhotoPending();return}
+        throw e2;
+      }
     }
     const bytes=await readPhotoResult(r);
     rkLog('addPhoto:bytes',{ok:!!(bytes&&bytes.b64),len:bytes&&bytes.b64?bytes.b64.length:0});
-    if(!bytes||!bytes.b64){toast('לא ניתן להוסיף תמונה',1);clearPhotoPending();return}
+    if(!bytes||!bytes.b64){
+      await pollNativePhotoPending();
+      if(byId(taskId)&&(byId(taskId).att||[]).length){clearPhotoPending();return}
+      toast('לא ניתן להוסיף תמונה',1);clearPhotoPending();return
+    }
     const ok=await ingestPhoto({base64String:bytes.b64,format:bytes.format},taskId);
     rkLog('addPhoto:ingest',ok);
     if(!ok)toast('לא ניתן להוסיף תמונה',1);
-    else clearPhotoPending();
-  }catch(e){clearPhotoPending();const msg=String((e&&e.message)||e||'');rkLog('addPhoto:catch',msg);if(!/user cancelled|canceled|cancelled by user/i.test(msg)||/empty/i.test(msg))toast('לא ניתן להוסיף תמונה',1)}
+    else{clearPhotoPending();try{if(Ran&&Ran.clearPending)await Ran.clearPending()}catch(e){}}
+  }catch(e){const msg=String((e&&e.message)||e||'');rkLog('addPhoto:catch',msg);await pollNativePhotoPending();if(byId(taskId)&&(byId(taskId).att||[]).length){clearPhotoPending();return}clearPhotoPending();if(!/user cancelled|canceled|cancelled by user/i.test(msg)||/empty|timeout/i.test(msg))toast('לא ניתן להוסיף תמונה',1)}
   finally{sheetHold.capture=false;reopenHeldSheet();rkLog('addPhoto:finally',{dlgOpen:!!dlg.open,editId,atts:draftAtt.length})}
 }
 async function addFile(){

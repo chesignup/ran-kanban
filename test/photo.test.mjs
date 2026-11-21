@@ -12,10 +12,11 @@ const ranJava = readFileSync(
 );
 const pure = html.match(/\/\/ <photo-pure>\r?\n([\s\S]*?)\r?\n\/\/ <\/photo-pure>/);
 assert.ok(pure, 'photo-pure block missing from index.html');
-const api = new Function(pure[1] + '\nreturn {shouldHoldSheet,onDialogCancel,onDialogClose,parsePhotoSession,photoSessionStale,pendingHolds,taskFromSession,restoredPhoto,planPhotoRestore,attachPhoto};')();
+const api = new Function(pure[1] + '\nreturn {shouldHoldSheet,onDialogCancel,onDialogClose,parsePhotoSession,photoSessionStale,pendingHolds,taskFromSession,restoredPhoto,planPhotoRestore,attachPhoto,planCaptureDelivery,capturePromiseRace};')();
 const {
   shouldHoldSheet, onDialogCancel, onDialogClose, parsePhotoSession, photoSessionStale,
   pendingHolds, taskFromSession, restoredPhoto, planPhotoRestore, attachPhoto,
+  planCaptureDelivery, capturePromiseRace,
 } = api;
 
 const quiet = {};
@@ -213,4 +214,40 @@ test('mocked RanCapture result ingests into task att and drives renderAtts', asy
   assert.match(html, /rkLog\('ingestPhoto:start'/);
   assert.match(html, /rkLog\('addPhoto:ran-result'/);
   assert.match(html, /lastIngestSig=sig/);
+});
+
+test('null PluginCall after confirmed pick must event+stash (F1/F2 repro)', () => {
+  // Before fix: onPicked/onCamera did `if (call == null) return` → hung await, no thumb.
+  assert.deepEqual(
+    planCaptureDelivery({callPresent: false, resultOk: true, uri: 'content://media/picker/1'}),
+    {action: 'event', alsoEvent: true, stash: true},
+  );
+  assert.deepEqual(
+    planCaptureDelivery({callPresent: true, resultOk: true, hasBytes: true}),
+    {action: 'resolve', alsoEvent: true, stash: true},
+  );
+  assert.equal(planCaptureDelivery({callPresent: false, resultOk: false}).action, 'cancel');
+  assert.match(ranJava, /publishPhoto/);
+  assert.match(ranJava, /notifyListeners\("captureReady"/);
+  assert.match(ranJava, /pollPending/);
+  assert.match(ranJava, /Log\.i\("RK"/);
+  assert.match(ranJava, /postDelayed\([\s\S]*?,\s*400\)/);
+  const onPicked = ranJava.slice(ranJava.indexOf('private void onPicked'), ranJava.indexOf('private void onFiles'));
+  assert.doesNotMatch(onPicked, /if \(call == null\) return;/);
+  const onCamera = ranJava.slice(ranJava.indexOf('private void onCamera'), ranJava.indexOf('private void onPicked'));
+  assert.doesNotMatch(onCamera, /if \(call == null\) return;/);
+  assert.match(html, /capturePromiseRace/);
+  assert.match(html, /pollNativePhotoPending/);
+  assert.match(html, /onCaptureReady/);
+  const capCfg = readFileSync(fileURLToPath(new URL('../capacitor.config.json', import.meta.url)), 'utf8');
+  assert.match(capCfg, /"loggingBehavior"\s*:\s*"production"/);
+});
+
+test('capturePromiseRace rejects on timeout so pollPending can recover', async () => {
+  await assert.rejects(
+    () => capturePromiseRace(new Promise(() => {}), 30),
+    /capture timeout/,
+  );
+  const ok = await capturePromiseRace(Promise.resolve({base64String: 'QQ=='}), 500);
+  assert.equal(ok.base64String, 'QQ==');
 });

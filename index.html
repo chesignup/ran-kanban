@@ -112,7 +112,7 @@ html{font-size:calc(16px * var(--z,1));touch-action:pan-x pan-y}
 <script>
 const P=[['ran','רן'],['gen','כללי'],['work','עבודה'],['trash','זבל']],K='ran_items_v2';
 // ===== config =====
-const APP_VER='0.1.12',SUPPORT_EMAIL='ran-tasks@mail.grokbot.com';
+const APP_VER='0.1.13',SUPPORT_EMAIL='ran-tasks@mail.grokbot.com';
 const GOOGLE_WEB_CLIENT_ID='155487724170-kv6v01qub9h8f1seolq5v2dqhjench45.apps.googleusercontent.com'; // Web OAuth client (project ran-tasks)
 const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.appdata';
 const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()),PL=(window.Capacitor&&Capacitor.Plugins)||{};
@@ -593,6 +593,7 @@ let sheetHold={hidden:false,paused:false,capture:false,perm:false},sheetWanted=f
 const PHOTO_PENDING_KEY='rk_photo_pending',PHOTO_INGESTED_KEY='rk_photo_ingested';
 const ingestedCaptures=new Set(parseIngestedCaptures((()=>{try{return localStorage.getItem(PHOTO_INGESTED_KEY)}catch(e){return null}})()));
 const inflightCaptures=new Set();
+let ingestBusy=Promise.resolve();
 function persistIngestedCaptures(){try{localStorage.setItem(PHOTO_INGESTED_KEY,JSON.stringify([...ingestedCaptures].slice(-100)))}catch(e){}}
 function liveHold(){
   return {hidden:sheetHold.hidden||!!document.hidden,paused:!!sheetHold.paused,capture:!!sheetHold.capture,perm:!!sheetHold.perm,suspend:!!suspendReopen};
@@ -727,7 +728,13 @@ function writePhotoPending(){
 }
 function clearPhotoPending(){try{localStorage.removeItem(PHOTO_PENDING_KEY)}catch(e){}}
 function armCapture(){sheetHold.capture=true;sheetWanted=true;try{if(sess){sess.dirty=1;applyDraft()}}catch(e){}writePhotoPending()}
-async function ingestPhoto(r, taskId){
+function ingestPhoto(r, taskId){
+  const run=()=>ingestPhotoBody(r, taskId);
+  const p=ingestBusy.then(run, run);
+  ingestBusy=p.then(()=>{},()=>{});
+  return p;
+}
+async function ingestPhotoBody(r, taskId){
   const n=normalizePhotoResult(r)||r;
   const b64s=n&&(n.base64String||n.base64);
   const key=captureKey(n)||(b64s?String(taskId)+':'+b64s.length+':'+b64s.slice(0,40):'');

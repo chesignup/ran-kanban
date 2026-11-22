@@ -112,7 +112,7 @@ html{font-size:calc(16px * var(--z,1));touch-action:pan-x pan-y}
 <script>
 const P=[['ran','רן'],['gen','כללי'],['work','עבודה'],['trash','זבל']],K='ran_items_v2';
 // ===== config =====
-const APP_VER='0.1.12',SUPPORT_EMAIL='ran-tasks@mail.grokbot.com';
+const APP_VER='0.1.13',SUPPORT_EMAIL='ran-tasks@mail.grokbot.com';
 const GOOGLE_WEB_CLIENT_ID='155487724170-kv6v01qub9h8f1seolq5v2dqhjench45.apps.googleusercontent.com'; // Web OAuth client (project ran-tasks)
 const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.appdata';
 const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()),PL=(window.Capacitor&&Capacitor.Plugins)||{};
@@ -244,10 +244,49 @@ function normalizePhotoResult(r){
   let b64=r.base64String||r.base64||'';
   if(!b64&&typeof r.dataUrl==='string'){const i=r.dataUrl.indexOf(',');b64=i>=0?r.dataUrl.slice(i+1):''}
   const format=r.format||'jpeg';
-  if(typeof b64==='string'&&b64)return {base64String:b64,format,path:r.path||'',webPath:r.webPath||''};
+  const captureId=r.captureId?String(r.captureId):'';
+  if(typeof b64==='string'&&b64)return {base64String:b64,format,path:r.path||'',webPath:r.webPath||'',captureId};
   const path=r.path||'',webPath=r.webPath||'';
-  if(path||webPath)return {base64String:'',format,path,webPath};
+  if(path||webPath||captureId)return {base64String:'',format,path,webPath,captureId};
   return null;
+}
+/** Stable id for one native capture: captureId, pending file name, or content fingerprint. */
+function captureKey(r){
+  if(!r||typeof r!=='object')return '';
+  if(r.captureId)return String(r.captureId);
+  const path=String(r.path||'');
+  if(path){
+    const i=Math.max(path.lastIndexOf('/'),path.lastIndexOf('\\'));
+    const name=i>=0?path.slice(i+1):path;
+    if(name)return name;
+  }
+  const b64=r.base64String||r.base64||'';
+  if(typeof b64==='string'&&b64)return 'b64:'+b64.length+':'+b64.slice(0,40);
+  return '';
+}
+function parseIngestedCaptures(raw){
+  try{
+    const a=typeof raw==='string'?JSON.parse(raw):raw;
+    if(!Array.isArray(a))return [];
+    return a.filter(x=>typeof x==='string'&&x).slice(-100);
+  }catch(e){return []}
+}
+/** Claim a capture key before any await. Returns false if already ingested or in-flight. */
+function claimCapture(key, ingested, inflight){
+  if(!key)return {ok:false,reason:'no-key'};
+  if(ingested&&ingested.has&&ingested.has(key))return {ok:false,reason:'ingested'};
+  if(inflight&&inflight.has&&inflight.has(key))return {ok:false,reason:'inflight'};
+  if(inflight&&inflight.add)inflight.add(key);
+  return {ok:true};
+}
+function rememberCapture(key, ingested, max){
+  if(!key||!ingested||!ingested.add)return;
+  ingested.add(key);
+  const lim=max==null?100:max;
+  if(ingested.size>lim){
+    const arr=[...ingested];
+    for(const k of arr.slice(0,arr.length-lim))ingested.delete(k);
+  }
 }
 function captureSource(which){return which==='photos'||which==='PHOTOS'?'PHOTOS':'CAMERA'}
 function restoredPhoto(ev){
@@ -551,7 +590,11 @@ function save(){
 }
 const rkLog=(...a)=>{try{console.log('RK',...a)}catch(e){}};
 let sheetHold={hidden:false,paused:false,capture:false,perm:false},sheetWanted=false,suspendReopen=false,photoRestoreBuf=null,photoRestoreBusy=null,lastIngestSig='';
-const PHOTO_PENDING_KEY='rk_photo_pending';
+const PHOTO_PENDING_KEY='rk_photo_pending',PHOTO_INGESTED_KEY='rk_photo_ingested';
+const ingestedCaptures=new Set(parseIngestedCaptures((()=>{try{return localStorage.getItem(PHOTO_INGESTED_KEY)}catch(e){return null}})()));
+const inflightCaptures=new Set();
+let ingestBusy=Promise.resolve();
+function persistIngestedCaptures(){try{localStorage.setItem(PHOTO_INGESTED_KEY,JSON.stringify([...ingestedCaptures].slice(-100)))}catch(e){}}
 function liveHold(){
   return {hidden:sheetHold.hidden||!!document.hidden,paused:!!sheetHold.paused,capture:!!sheetHold.capture,perm:!!sheetHold.perm,suspend:!!suspendReopen};
 }
@@ -587,8 +630,8 @@ async function ingestNativePhotoPayload(payload,via){
   if(n.base64String)bytes={b64:n.base64String,format:n.format};
   else bytes=await readPhotoResult(n);
   if(!bytes||!bytes.b64){rkLog('nativePhoto:no-bytes',via);return false}
-  rkLog('nativePhoto:ingest',{via,taskId,len:bytes.b64.length});
-  const ok=await ingestPhoto({base64String:bytes.b64,format:bytes.format},taskId);
+  rkLog('nativePhoto:ingest',{via,taskId,len:bytes.b64.length,captureId:n.captureId||'',path:n.path||''});
+  const ok=await ingestPhoto({base64String:bytes.b64,format:bytes.format,captureId:n.captureId||'',path:n.path||''},taskId);
   if(ok){clearPhotoPending();try{const Ran=ranPlugin();if(Ran&&Ran.clearPending)await Ran.clearPending()}catch(e){}}
   return ok;
 }
@@ -685,44 +728,60 @@ function writePhotoPending(){
 }
 function clearPhotoPending(){try{localStorage.removeItem(PHOTO_PENDING_KEY)}catch(e){}}
 function armCapture(){sheetHold.capture=true;sheetWanted=true;try{if(sess){sess.dirty=1;applyDraft()}}catch(e){}writePhotoPending()}
-async function ingestPhoto(r, taskId){
-  const b64s=r&&(r.base64String||r.base64);
-  rkLog('ingestPhoto:start',{taskId,editId,hasB64:!!b64s,len:b64s?b64s.length:0});
+function ingestPhoto(r, taskId){
+  const run=()=>ingestPhotoBody(r, taskId);
+  const p=ingestBusy.then(run, run);
+  ingestBusy=p.then(()=>{},()=>{});
+  return p;
+}
+async function ingestPhotoBody(r, taskId){
+  const n=normalizePhotoResult(r)||r;
+  const b64s=n&&(n.base64String||n.base64);
+  const key=captureKey(n)||(b64s?String(taskId)+':'+b64s.length+':'+b64s.slice(0,40):'');
+  rkLog('ingestPhoto:start',{taskId,editId,key,hasB64:!!b64s,len:b64s?b64s.length:0});
   if(!b64s||taskId==null){rkLog('ingestPhoto:reject-empty');return false}
-  const sig=String(taskId)+':'+b64s.length+':'+b64s.slice(0,40);
-  if(sig===lastIngestSig){
+  const claim=claimCapture(key,ingestedCaptures,inflightCaptures);
+  if(!claim.ok){
     const cur=byId(taskId);
-    rkLog('ingestPhoto:dedupe',{taskId,hasTask:!!cur,att:(cur&&cur.att||[]).length});
+    rkLog('ingestPhoto:dedupe',{key,reason:claim.reason,taskId,hasTask:!!cur,att:(cur&&cur.att||[]).length});
     if(cur&&String(editId)===String(taskId)){
       draftAtt=(cur.att||[]).slice();
       if(sess){sess.dirty=1;applyDraft()}
       await renderAtts();
     }else if(cur) revealTask(taskId);
+    try{const Ran=ranPlugin();if(Ran&&Ran.clearPending)await Ran.clearPending()}catch(e){}
     return !!(cur&&(cur.att||[]).length);
   }
-  const parts=cameraParts(r.format);
-  const att={id:'a'+Date.now()+Math.random().toString(36).slice(2,6),name:'photo_'+Date.now()+'.'+parts.ext,type:parts.type};
-  await idb('put',b64blob(b64s,parts.type),att.id);
-  try{if(NATIVE&&PL.Filesystem)await PL.Filesystem.writeFile({path:'rk/att/'+att.id,data:b64s,directory:'DATA',recursive:true})}catch(e){rkLog('ingestPhoto:fs-write-fail',String(e))}
-  const cur=byId(taskId);
-  if(!cur){rkLog('ingestPhoto:no-task',taskId);return false}
-  const next=attachPhoto(cur,att);
-  if(!next){rkLog('ingestPhoto:attach-fail');return false}
-  const idx=I.findIndex(x=>x&&String(x.id)===String(taskId));
-  if(idx<0){rkLog('ingestPhoto:idx-miss');return false}
-  I[idx]=next;
-  lastIngestSig=sig;
-  sheetWanted=true;
-  if(String(editId)===String(taskId)){
-    draftAtt=next.att.slice();
-    if(sess){sess.dirty=1;applyDraft()}
-    await renderAtts();
-  }else revealTask(taskId);
-  save();draw();
-  if(String(editId)===String(taskId)&&!dlg.open)reopenHeldSheet();
-  rkLog('ingestPhoto:ok',{taskId,attId:att.id,atts:next.att.length,dlgOpen:!!dlg.open});
-  return true;
+  try{
+    const parts=cameraParts(n.format);
+    const att={id:'a'+Date.now()+Math.random().toString(36).slice(2,6),name:'photo_'+Date.now()+'.'+parts.ext,type:parts.type};
+    await idb('put',b64blob(b64s,parts.type),att.id);
+    try{if(NATIVE&&PL.Filesystem)await PL.Filesystem.writeFile({path:'rk/att/'+att.id,data:b64s,directory:'DATA',recursive:true})}catch(e){rkLog('ingestPhoto:fs-write-fail',String(e))}
+    const cur=byId(taskId);
+    if(!cur){rkLog('ingestPhoto:no-task',taskId);return false}
+    const next=attachPhoto(cur,att);
+    if(!next){rkLog('ingestPhoto:attach-fail');return false}
+    const idx=I.findIndex(x=>x&&String(x.id)===String(taskId));
+    if(idx<0){rkLog('ingestPhoto:idx-miss');return false}
+    I[idx]=next;
+    rememberCapture(key,ingestedCaptures,100);
+    persistIngestedCaptures();
+    lastIngestSig=key;
+    sheetWanted=true;
+    if(String(editId)===String(taskId)){
+      draftAtt=next.att.slice();
+      if(sess){sess.dirty=1;applyDraft()}
+      await renderAtts();
+    }else revealTask(taskId);
+    save();draw();
+    if(String(editId)===String(taskId)&&!dlg.open)reopenHeldSheet();
+    rkLog('ingestPhoto:ok',{taskId,attId:att.id,key,atts:next.att.length,dlgOpen:!!dlg.open});
+    return true;
+  }finally{
+    inflightCaptures.delete(key);
+  }
 }
+
 function revealTask(id){const t=byId(id);if(!t)return;const j=P.findIndex(p=>p[0]===t.page);if(j>=0){go(j,1);curPage=j;dt()}if(!dlg.open||String(editId)!==String(id))edit(id)}
 async function finishPhotoRestore(){
   let raw=null;try{raw=localStorage.getItem(PHOTO_PENDING_KEY)}catch(e){}
@@ -800,7 +859,7 @@ async function addPhoto(which){
       if(byId(taskId)&&(byId(taskId).att||[]).length){clearPhotoPending();return}
       toast('לא ניתן להוסיף תמונה',1);clearPhotoPending();return
     }
-    const ok=await ingestPhoto({base64String:bytes.b64,format:bytes.format},taskId);
+    const ok=await ingestPhoto({base64String:bytes.b64,format:bytes.format,captureId:(r&&r.captureId)||'',path:(r&&r.path)||''},taskId);
     rkLog('addPhoto:ingest',ok);
     if(!ok)toast('לא ניתן להוסיף תמונה',1);
     else{clearPhotoPending();try{if(Ran&&Ran.clearPending)await Ran.clearPending()}catch(e){}}

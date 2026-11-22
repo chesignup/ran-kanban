@@ -142,13 +142,13 @@ test('empty overwrite guard', () => {
   assert.equal(decideFlush(false, 2, 0, false), 'skip');
 });
 
-test('version 0.1.12 / versionCode 13', () => {
-  assert.match(html, /APP_VER='0\.1\.12'/);
+test('version 0.1.13 / versionCode 14', () => {
+  assert.match(html, /APP_VER='0\.1\.13'/);
   const pkg = JSON.parse(readFileSync(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf8'));
-  assert.equal(pkg.version, '0.1.12');
+  assert.equal(pkg.version, '0.1.13');
   const gradle = readFileSync(fileURLToPath(new URL('../android/app/build.gradle', import.meta.url)), 'utf8');
-  assert.match(gradle, /versionCode 13/);
-  assert.match(gradle, /versionName "0\.1\.12"/);
+  assert.match(gradle, /versionCode 14/);
+  assert.match(gradle, /versionName "0\.1\.13"/);
   const java = readFileSync(fileURLToPath(new URL('../android/app/src/main/java/il/co/karisi/ran/MainActivity.java', import.meta.url)), 'utf8');
   assert.match(java, /__rkFlush/);
 });

@@ -134,8 +134,10 @@ public class RanCapturePlugin extends Plugin {
                 JSObject ret = new JSObject();
                 ret.put("base64String", encoded);
                 ret.put("format", "jpeg");
+                ret.put("path", path);
+                ret.put("captureId", f.getName());
                 prefs.edit().remove(KEY_PENDING_PATH).remove(KEY_PENDING_AT).apply();
-                rk("pollPending path=" + path + " raw=" + raw.length + " b64=" + encoded.length());
+                rk("pollPending captureId=" + f.getName() + " path=" + path + " raw=" + raw.length + " b64=" + encoded.length());
                 resolve(call, ret);
             } catch (Exception e) {
                 reject(call, e.getMessage() == null ? "poll failed" : e.getMessage());
@@ -493,15 +495,19 @@ public class RanCapturePlugin extends Plugin {
         try {
             byte[] jpeg = Base64.decode(encoded, Base64.NO_WRAP);
             File stash = stashJpegFile(jpeg);
+            String captureId = stash.getName();
+            ret.put("captureId", captureId);
+            ret.put("path", stash.getAbsolutePath());
             getContext().getSharedPreferences(PREFS_CAPTURE, Activity.MODE_PRIVATE)
                 .edit()
                 .putString(KEY_PENDING_PATH, stash.getAbsolutePath())
                 .putLong(KEY_PENDING_AT, System.currentTimeMillis())
                 .apply();
+            rk("publishPhoto captureId=" + captureId + " rawLen=" + raw.length + " b64Len=" + encoded.length());
         } catch (Exception e) {
             rk("stash failed: " + e.getMessage());
+            rk("publishPhoto rawLen=" + raw.length + " b64Len=" + encoded.length());
         }
-        rk("publishPhoto rawLen=" + raw.length + " b64Len=" + encoded.length());
         if (call != null) resolve(call, ret);
         notifyListeners("captureReady", ret, true);
     }

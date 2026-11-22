@@ -244,10 +244,49 @@ function normalizePhotoResult(r){
   let b64=r.base64String||r.base64||'';
   if(!b64&&typeof r.dataUrl==='string'){const i=r.dataUrl.indexOf(',');b64=i>=0?r.dataUrl.slice(i+1):''}
   const format=r.format||'jpeg';
-  if(typeof b64==='string'&&b64)return {base64String:b64,format,path:r.path||'',webPath:r.webPath||''};
+  const captureId=r.captureId?String(r.captureId):'';
+  if(typeof b64==='string'&&b64)return {base64String:b64,format,path:r.path||'',webPath:r.webPath||'',captureId};
   const path=r.path||'',webPath=r.webPath||'';
-  if(path||webPath)return {base64String:'',format,path,webPath};
+  if(path||webPath||captureId)return {base64String:'',format,path,webPath,captureId};
   return null;
+}
+/** Stable id for one native capture: captureId, pending file name, or content fingerprint. */
+function captureKey(r){
+  if(!r||typeof r!=='object')return '';
+  if(r.captureId)return String(r.captureId);
+  const path=String(r.path||'');
+  if(path){
+    const i=Math.max(path.lastIndexOf('/'),path.lastIndexOf('\\'));
+    const name=i>=0?path.slice(i+1):path;
+    if(name)return name;
+  }
+  const b64=r.base64String||r.base64||'';
+  if(typeof b64==='string'&&b64)return 'b64:'+b64.length+':'+b64.slice(0,40);
+  return '';
+}
+function parseIngestedCaptures(raw){
+  try{
+    const a=typeof raw==='string'?JSON.parse(raw):raw;
+    if(!Array.isArray(a))return [];
+    return a.filter(x=>typeof x==='string'&&x).slice(-100);
+  }catch(e){return []}
+}
+/** Claim a capture key before any await. Returns false if already ingested or in-flight. */
+function claimCapture(key, ingested, inflight){
+  if(!key)return {ok:false,reason:'no-key'};
+  if(ingested&&ingested.has&&ingested.has(key))return {ok:false,reason:'ingested'};
+  if(inflight&&inflight.has&&inflight.has(key))return {ok:false,reason:'inflight'};
+  if(inflight&&inflight.add)inflight.add(key);
+  return {ok:true};
+}
+function rememberCapture(key, ingested, max){
+  if(!key||!ingested||!ingested.add)return;
+  ingested.add(key);
+  const lim=max==null?100:max;
+  if(ingested.size>lim){
+    const arr=[...ingested];
+    for(const k of arr.slice(0,arr.length-lim))ingested.delete(k);
+  }
 }
 function captureSource(which){return which==='photos'||which==='PHOTOS'?'PHOTOS':'CAMERA'}
 function restoredPhoto(ev){

@@ -12,11 +12,12 @@ const ranJava = readFileSync(
 );
 const pure = html.match(/\/\/ <photo-pure>\r?\n([\s\S]*?)\r?\n\/\/ <\/photo-pure>/);
 assert.ok(pure, 'photo-pure block missing from index.html');
-const api = new Function(pure[1] + '\nreturn {shouldHoldSheet,onDialogCancel,onDialogClose,parsePhotoSession,photoSessionStale,pendingHolds,taskFromSession,restoredPhoto,planPhotoRestore,attachPhoto,planCaptureDelivery,capturePromiseRace};')();
+const api = new Function(pure[1] + '\nreturn {shouldHoldSheet,onDialogCancel,onDialogClose,parsePhotoSession,photoSessionStale,pendingHolds,taskFromSession,restoredPhoto,planPhotoRestore,attachPhoto,planCaptureDelivery,capturePromiseRace,normalizePhotoResult,captureKey,parseIngestedCaptures,claimCapture,rememberCapture};')();
 const {
   shouldHoldSheet, onDialogCancel, onDialogClose, parsePhotoSession, photoSessionStale,
   pendingHolds, taskFromSession, restoredPhoto, planPhotoRestore, attachPhoto,
-  planCaptureDelivery, capturePromiseRace,
+  planCaptureDelivery, capturePromiseRace, normalizePhotoResult, captureKey,
+  parseIngestedCaptures, claimCapture, rememberCapture,
 } = api;
 
 const quiet = {};
@@ -107,7 +108,7 @@ test('gallery bytes and a separate camera source both count as a photo', () => {
   assert.doesNotMatch(html.slice(html.indexOf('async function addPhoto'), html.indexOf('async function addFile')), /source:'PROMPT'/);
   const addPhoto = html.slice(html.indexOf('async function addPhoto'), html.indexOf('async function addFile'));
   assert.match(addPhoto, /const taskId=editId/);
-  assert.match(addPhoto, /ingestPhoto\([^)]*,taskId\)/);
+  assert.match(addPhoto, /ingestPhoto\(\{[\s\S]*?\},taskId\)/);
   assert.match(ranJava, /call\.setKeepAlive\(true\)/);
 });
 
@@ -167,11 +168,15 @@ test('mocked RanCapture result ingests into task att and drives renderAtts', asy
       rendered.push({id: a.id, type: a.type, hasBlob: !!b, thumb: !!(b && /^image/.test(a.type))});
     }
   };
+  const ingestedCaptures = new Set();
+  const inflightCaptures = new Set();
   async function ingestPhoto(r, taskId) {
-    const b64s = r && (r.base64String || r.base64);
+    const n = normalizePhotoResult(r) || r;
+    const b64s = n && (n.base64String || n.base64);
     if (!b64s || taskId == null) return false;
-    const sig = String(taskId) + ':' + b64s.length + ':' + b64s.slice(0, 40);
-    if (sig === lastIngestSig) {
+    const key = captureKey(n) || (String(taskId) + ':' + b64s.length + ':' + b64s.slice(0, 40));
+    const claim = claimCapture(key, ingestedCaptures, inflightCaptures);
+    if (!claim.ok) {
       const cur = byId(taskId);
       if (cur && String(editId) === String(taskId)) {
         draftAtt = (cur.att || []).slice();
@@ -179,28 +184,33 @@ test('mocked RanCapture result ingests into task att and drives renderAtts', asy
       }
       return !!(cur && (cur.att || []).length);
     }
-    const parts = cameraParts(r.format);
-    const att = {id: 'a1', name: 'photo_1.' + parts.ext, type: parts.type};
-    await idb('put', b64blob(b64s, parts.type), att.id);
-    const cur = byId(taskId);
-    if (!cur) return false;
-    const next = attachPhoto(cur, att);
-    const idx = I.findIndex((x) => x && String(x.id) === String(taskId));
-    if (idx < 0) return false;
-    I[idx] = next;
-    lastIngestSig = sig;
-    if (String(editId) === String(taskId)) {
-      draftAtt = next.att.slice();
-      await renderAtts();
+    try {
+      const parts = cameraParts(n.format);
+      const att = {id: 'a' + (store.size + 1), name: 'photo_' + store.size + '.' + parts.ext, type: parts.type};
+      await idb('put', b64blob(b64s, parts.type), att.id);
+      const cur = byId(taskId);
+      if (!cur) return false;
+      const next = attachPhoto(cur, att);
+      const idx = I.findIndex((x) => x && String(x.id) === String(taskId));
+      if (idx < 0) return false;
+      I[idx] = next;
+      rememberCapture(key, ingestedCaptures, 100);
+      lastIngestSig = key;
+      if (String(editId) === String(taskId)) {
+        draftAtt = next.att.slice();
+        await renderAtts();
+      }
+      return true;
+    } finally {
+      inflightCaptures.delete(key);
     }
-    return true;
   }
 
   const pluginResult = {base64String: 'aGVsbG8=', format: 'jpeg'}; // mocked RanCapture resolve
   assert.equal(await ingestPhoto(pluginResult, 't-photo'), true);
   assert.equal(I[0].att.length, 1);
   assert.equal(I[0].att[0].type, 'image/jpeg');
-  assert.equal(store.has('a1'), true);
+  assert.equal(store.has(I[0].att[0].id), true);
   assert.equal(rendered.length, 1);
   assert.equal(rendered[0].thumb, true);
 
@@ -213,7 +223,12 @@ test('mocked RanCapture result ingests into task att and drives renderAtts', asy
 
   assert.match(html, /rkLog\('ingestPhoto:start'/);
   assert.match(html, /rkLog\('addPhoto:ran-result'/);
-  assert.match(html, /lastIngestSig=sig/);
+  assert.match(html, /claimCapture\(key,ingestedCaptures,inflightCaptures\)/);
+  assert.match(html, /ingestBusy/);
+  assert.match(html, /ingestPhotoBody/);
+  assert.match(html, /rememberCapture\(key,ingestedCaptures/);
+  assert.match(html, /PHOTO_INGESTED_KEY/);
+  assert.match(ranJava, /put\("captureId"/);
 });
 
 test('null PluginCall after confirmed pick must event+stash (F1/F2 repro)', () => {
@@ -251,3 +266,88 @@ test('capturePromiseRace rejects on timeout so pollPending can recover', async (
   const ok = await capturePromiseRace(Promise.resolve({base64String: 'QQ=='}), 500);
   assert.equal(ok.base64String, 'QQ==');
 });
+
+
+test('captureKey prefers captureId then pending file name', () => {
+  assert.equal(captureKey({captureId: 'pending_9.jpg', path: '/x/other.jpg', base64String: 'aa'}), 'pending_9.jpg');
+  assert.equal(captureKey({path: '/cache/captures/pending_42.jpg', base64String: 'aa'}), 'pending_42.jpg');
+  assert.match(captureKey({base64String: 'aGVsbG8='}), /^b64:/);
+  assert.deepEqual(parseIngestedCaptures('["a","b"]'), ['a', 'b']);
+  assert.deepEqual(parseIngestedCaptures('nope'), []);
+});
+
+test('addPhoto result + nativePhoto event + pollPending same capture -> 1 attachment', async () => {
+  const store = new Map();
+  const I = [{id: 't-photo', name: 'TEST', page: 'work', att: []}];
+  let editId = 't-photo';
+  let draftAtt = [];
+  let lastIngestSig = '';
+  const ingestedCaptures = new Set(parseIngestedCaptures('[]'));
+  const inflightCaptures = new Set();
+  const idb = async (op, val, key) => {
+    if (op === 'put') { store.set(key, val); return; }
+    if (op === 'get') return store.get(key) || null;
+  };
+  const cameraParts = (format) => ({type: 'image/jpeg', ext: 'jpg'});
+  const b64blob = (b, type) => ({__blob: true, b64: b, type});
+  const byId = (id) => I.find((x) => x && String(x.id) === String(id));
+  let ingestBusy = Promise.resolve();
+  function ingestPhoto(r, taskId) {
+    const run = () => ingestPhotoBody(r, taskId);
+    const p = ingestBusy.then(run, run);
+    ingestBusy = p.then(() => {}, () => {});
+    return p;
+  }
+  async function ingestPhotoBody(r, taskId) {
+    const n = normalizePhotoResult(r) || r;
+    const b64s = n && (n.base64String || n.base64);
+    if (!b64s || taskId == null) return false;
+    const key = captureKey(n) || (String(taskId) + ':' + b64s.length + ':' + b64s.slice(0, 40));
+    const claim = claimCapture(key, ingestedCaptures, inflightCaptures);
+    if (!claim.ok) return !!(byId(taskId) && (byId(taskId).att || []).length);
+    try {
+      const parts = cameraParts(n.format);
+      const att = {id: 'a' + store.size, name: 'photo.' + parts.ext, type: parts.type};
+      await idb('put', b64blob(b64s, parts.type), att.id);
+      const cur = byId(taskId);
+      const next = attachPhoto(cur, att);
+      I[I.findIndex((x) => String(x.id) === String(taskId))] = next;
+      rememberCapture(key, ingestedCaptures, 100);
+      lastIngestSig = key;
+      if (String(editId) === String(taskId)) draftAtt = next.att.slice();
+      return true;
+    } finally {
+      inflightCaptures.delete(key);
+    }
+  }
+
+  const captureId = 'pending_111.jpg';
+  const path = '/cache/captures/' + captureId;
+  const b64 = 'aGVsbG8='; // same bytes for all three paths
+  const addPhotoResult = {base64String: b64, format: 'jpeg', captureId, path};
+  const nativePhotoEvent = {base64String: b64, format: 'jpeg', captureId, path};
+  const pollPending = {base64String: b64, format: 'jpeg', captureId, path};
+  // Concurrent callers (promise + event + poll) — queue serializes; all resolve true, one attach
+  const results = await Promise.all([
+    ingestPhoto(addPhotoResult, 't-photo'),
+    ingestPhoto(nativePhotoEvent, 't-photo'),
+    ingestPhoto(pollPending, 't-photo'),
+  ]);
+  assert.deepEqual(results, [true, true, true]);
+  assert.equal(I[0].att.length, 1);
+  assert.equal(draftAtt.length, 1);
+  assert.equal(ingestedCaptures.has(captureId), true);
+
+  // Persist + reload set → still skip
+  const persisted = JSON.stringify([...ingestedCaptures]);
+  const reloaded = new Set(parseIngestedCaptures(persisted));
+  assert.equal(claimCapture(captureId, reloaded, new Set()).ok, false);
+
+  // Two different photos → 2 attachments
+  const second = {base64String: 'd29ybGQ=', format: 'jpeg', captureId: 'pending_222.jpg', path: '/cache/captures/pending_222.jpg'};
+  assert.equal(await ingestPhoto(second, 't-photo'), true);
+  assert.equal(I[0].att.length, 2);
+  assert.match(html, /captureId:\(r&&r\.captureId\)/);
+  assert.match(ranJava, /ret\.put\("captureId"/);
+});
+

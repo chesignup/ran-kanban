@@ -26,8 +26,10 @@ test('script parses', () => {
 
 test('key is not read with the broken {key} call', () => {
   assert.doesNotMatch(html, /internalGetItem\(\s*\{[^}]*\bkey\s*:/);
-  assert.match(html, /getItem\('ran\.datakey'\)/);
-  assert.match(html, /setItem\('ran\.datakey'/);
+  assert.match(html, /DATAKEY_NAME='ran\.datakey'/);
+  assert.match(html, /writeNativeKey/);
+  assert.match(html, /internalSetItem\(\{prefixedKey/);
+  assert.doesNotMatch(html, /else await SS\.set\(/);
 });
 
 test('startup does not seed-and-overwrite', () => {
@@ -140,13 +142,13 @@ test('empty overwrite guard', () => {
   assert.equal(decideFlush(false, 2, 0, false), 'skip');
 });
 
-test('version 0.1.11 / versionCode 12', () => {
-  assert.match(html, /APP_VER='0\.1\.11'/);
+test('version 0.1.12 / versionCode 13', () => {
+  assert.match(html, /APP_VER='0\.1\.12'/);
   const pkg = JSON.parse(readFileSync(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf8'));
-  assert.equal(pkg.version, '0.1.11');
+  assert.equal(pkg.version, '0.1.12');
   const gradle = readFileSync(fileURLToPath(new URL('../android/app/build.gradle', import.meta.url)), 'utf8');
-  assert.match(gradle, /versionCode 12/);
-  assert.match(gradle, /versionName "0\.1\.11"/);
+  assert.match(gradle, /versionCode 13/);
+  assert.match(gradle, /versionName "0\.1\.12"/);
   const java = readFileSync(fileURLToPath(new URL('../android/app/src/main/java/il/co/karisi/ran/MainActivity.java', import.meta.url)), 'utf8');
   assert.match(java, /__rkFlush/);
 });

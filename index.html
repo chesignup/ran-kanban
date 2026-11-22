@@ -112,7 +112,7 @@ html{font-size:calc(16px * var(--z,1));touch-action:pan-x pan-y}
 <script>
 const P=[['ran','רן'],['gen','כללי'],['work','עבודה'],['trash','זבל']],K='ran_items_v2';
 // ===== config =====
-const APP_VER='0.1.11',SUPPORT_EMAIL='ran-tasks@mail.grokbot.com';
+const APP_VER='0.1.12',SUPPORT_EMAIL='ran-tasks@mail.grokbot.com';
 const GOOGLE_WEB_CLIENT_ID='155487724170-kv6v01qub9h8f1seolq5v2dqhjench45.apps.googleusercontent.com'; // Web OAuth client (project ran-tasks)
 const DRIVE_SCOPE='https://www.googleapis.com/auth/drive.appdata';
 const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()),PL=(window.Capacitor&&Capacitor.Plugins)||{};
@@ -358,6 +358,33 @@ function reminderScheduleList(items, now, nidFn){
   return list;
 }
 // </remind-pure>
+// <secure-pure>
+// Capacitor.Plugins.SecureStorage only exposes native @PluginMethod names
+// (internalGetItem / internalSetItem). The JS wrapper methods get/set/getItem/setItem
+// exist only on the imported @aparajita proxy — never on PL.SecureStorage.
+const SS_KEY_PREFIX='capacitor-storage_',DATAKEY_NAME='ran.datakey';
+function ssPrefixedKey(name){return SS_KEY_PREFIX+(name||DATAKEY_NAME)}
+function ssWritePlan(SS){
+  if(!SS)return null;
+  if(typeof SS.setItem==='function')return 'setItem';
+  if(typeof SS.set==='function')return 'set';
+  if(typeof SS.internalSetItem==='function')return 'internalSetItem';
+  return null;
+}
+function ssReadPlan(SS){
+  if(!SS)return null;
+  if(typeof SS.getItem==='function')return 'getItem';
+  if(typeof SS.get==='function')return 'get';
+  if(typeof SS.internalGetItem==='function')return 'internalGetItem';
+  return null;
+}
+function migratePlainToEncPlan(copies, encOk){
+  const plain=(copies||[]).find(c=>c&&c.role==='plain'&&c.ok&&c.state);
+  if(!plain)return {action:'none'};
+  if(!encOk)return {action:'keep-plain',state:plain.state};
+  return {action:'encrypt-and-drop-plain',state:plain.state};
+}
+// </secure-pure>
 let tombstones=[],stateTrusted=false,persistedSnap='',flushQ=Promise.resolve(),keyAbort=null,saveWarned=false,booting=true;
 let dbp=new Promise((res,rej)=>{const q=indexedDB.open('ran_files',2);
   q.onupgradeneeded=()=>{const d=q.result;if(!d.objectStoreNames.contains('f'))d.createObjectStore('f');if(!d.objectStoreNames.contains('k'))d.createObjectStore('k')};
@@ -381,26 +408,40 @@ async function ciphertextExists(){
 }
 async function readNativeKey(SS){
   let failed=false;
-  if(typeof SS.getItem==='function'){try{const v=await SS.getItem('ran.datakey');if(typeof v==='string'&&v)return {value:v,failed:false}}catch(e){failed=true}}
-  else if(typeof SS.get==='function'){try{const v=await SS.get('ran.datakey');if(typeof v==='string'&&v)return {value:v,failed:false}}catch(e){failed=true}}
+  const plan=ssReadPlan(SS);
+  if(plan==='getItem'){try{const v=await SS.getItem(DATAKEY_NAME);if(typeof v==='string'&&v)return {value:v,failed:false}}catch(e){failed=true}}
+  else if(plan==='get'){try{const v=await SS.get(DATAKEY_NAME);if(typeof v==='string'&&v)return {value:v,failed:false}}catch(e){failed=true}}
   if(typeof SS.internalGetItem==='function'){
-    for(const prefixedKey of ['capacitor-storage_ran.datakey','ran.datakey']){
-      try{const g=await SS.internalGetItem({prefixedKey});if(g&&typeof g.data==='string'&&g.data)return {value:g.data,failed:false}}catch(e){}
+    for(const prefixedKey of [ssPrefixedKey(DATAKEY_NAME),DATAKEY_NAME]){
+      try{const g=await SS.internalGetItem({prefixedKey});if(g&&typeof g.data==='string'&&g.data)return {value:g.data,failed:false}}catch(e){failed=true}
     }
   }
   return {value:null,failed};
 }
+async function writeNativeKey(SS,r){
+  const plan=ssWritePlan(SS);
+  if(plan==='setItem'){await SS.setItem(DATAKEY_NAME,r);return plan}
+  if(plan==='set'){await SS.set(DATAKEY_NAME,r);return plan}
+  if(plan==='internalSetItem'){await SS.internalSetItem({prefixedKey:ssPrefixedKey(DATAKEY_NAME),data:r});return plan}
+  throw new Error('SecureStorage has no write API');
+}
+async function readFallbackKey(){
+  try{const v=await raw('k','get','dk-raw');if(typeof v==='string'&&v)return v}catch(e){}
+  return null;
+}
+async function writeFallbackKey(r){try{await raw('k','put',r,'dk-raw')}catch(e){}}
 let KEY;async function getKey(){if(KEY)return KEY;if(keyAbort)throw keyAbort;
-  if(NATIVE&&PL.SecureStorage){const SS=PL.SecureStorage;const got=await readNativeKey(SS);
+  if(NATIVE&&PL.SecureStorage){const SS=PL.SecureStorage;let got=await readNativeKey(SS);
+    if(!got.value){const fb=await readFallbackKey();if(fb)got={value:fb,failed:false}}
     const blobs=got.value?false:await ciphertextExists();
     const decision=decideKey(got.value, got.failed, blobs);
     if(decision==='abort'){keyAbort=new Error('datakey unavailable');throw keyAbort}
     let r=got.value;
     if(decision==='create'){r=b64(crypto.getRandomValues(new Uint8Array(32)));
-      if(typeof SS.setItem==='function')await SS.setItem('ran.datakey',r);
-      else await SS.set('ran.datakey',r);
-      const back=await readNativeKey(SS);
-      if(!back.value||back.value!==r){keyAbort=new Error('datakey not stored');throw keyAbort}
+      let stored=false;
+      try{await writeNativeKey(SS,r);const back=await readNativeKey(SS);stored=!!(back.value&&back.value===r)}catch(e){console.warn('SecureStorage write failed',e)}
+      if(!stored){await writeFallbackKey(r);stored=true}
+      if(!stored){keyAbort=new Error('datakey not stored');throw keyAbort}
     }
     KEY=await crypto.subtle.importKey('raw',unb64(r),'AES-GCM',false,['encrypt','decrypt']);return KEY}
   let wk=null;try{wk=await raw('k','get','dk')}catch(e){}
@@ -411,8 +452,13 @@ let KEY;async function getKey(){if(KEY)return KEY;if(keyAbort)throw keyAbort;
   KEY=wk;return KEY}
 async function enc(buf){const iv=crypto.getRandomValues(new Uint8Array(12));return{iv,ct:await crypto.subtle.encrypt({name:'AES-GCM',iv},await getKey(),buf)}}
 async function dec(o){return crypto.subtle.decrypt({name:'AES-GCM',iv:o.iv},await getKey(),o.ct)}
-const idb=async(m,v,id)=>{if(m=='put'){const e=await enc(await v.arrayBuffer());e.type=v.type;return raw('f','put',e,id)}
- if(m=='get'){const o=await raw('f','get',v);if(!o)return o;if(o instanceof Blob)return o;return new Blob([await dec(o)],{type:o.type})}return raw('f',m,v,id)};
+const idb=async(m,v,id)=>{
+  if(m=='put'){
+    try{const e=await enc(await v.arrayBuffer());e.type=v.type;return raw('f','put',e,id)}
+    catch(err){console.warn('enc put failed; plaintext blob kept',err);return raw('f','put',v,id)}
+  }
+  if(m=='get'){const o=await raw('f','get',v);if(!o)return o;if(o instanceof Blob)return o;try{return new Blob([await dec(o)],{type:o.type})}catch(err){console.warn('dec get failed',err);return null}}
+  return raw('f',m,v,id)};
 function liveItems(){return I.filter(t=>!(t.fresh&&!(t.name||t.phone||t.address||t.notes||(t.att&&t.att.length))))}
 function stampDirty(){
   let prev={items:[],tombstones:[]};
